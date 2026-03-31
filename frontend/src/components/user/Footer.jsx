@@ -14,14 +14,14 @@ const Footer = () => {
             <p className="text-sm text-on-surface-variant leading-relaxed max-w-xs font-medium">
               Trải nghiệm điện ảnh đỉnh cao với chất lượng 4K, âm thanh vòm và kho phim khổng lồ được cập nhật mỗi ngày.
             </p>
-            <div className="flex gap-4">
+            {/* <div className="flex gap-4">
               {['Facebook', 'Instagram', 'Twitter', 'Youtube'].map((social) => (
                 <button key={social} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-primary transition-all group border border-white/5">
                   <span className="sr-only">{social}</span>
                   <div className="w-4 h-4 rounded-sm bg-on-surface-variant group-hover:bg-white transition-colors"></div>
                 </button>
               ))}
-            </div>
+            </div> */}
           </div>
 
           <div>
@@ -44,7 +44,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          <div className="space-y-8">
+          {/* <div className="space-y-8">
             <h4 className="text-white font-black text-xs uppercase tracking-[0.2em] mb-8">Đăng ký nhận tin</h4>
             <div className="relative group">
               <input 
@@ -56,7 +56,7 @@ const Footer = () => {
                 Gửi
               </button>
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">

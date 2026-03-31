@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Search as SearchIcon, Filter, Play, ArrowLeft, Loader2, Sparkles, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FEATURED_MOVIES, TRENDING_MOVIES, FILTER_MOVIES } from '../constants';
+import { TRENDING_MOVIES } from '../constants';
+import { searchMovies } from '../service/movie_service';
 import MovieCard from '../components/shared/MovieCard';
 
 const Search = () => {
@@ -12,20 +13,31 @@ const Search = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
-    // Simulate API call for cinematic feel
-    const timer = setTimeout(() => {
-      const allMovies = [...FEATURED_MOVIES, ...TRENDING_MOVIES, ...FILTER_MOVIES];
-      const filtered = allMovies.filter(movie => 
-        movie.title.toLowerCase().includes(query.toLowerCase()) ||
-        movie.genre?.toLowerCase().includes(query.toLowerCase())
-      );
-      // Remove duplicates by ID
-      const uniqueResults = Array.from(new Map(filtered.map(item => [item.id, item])).values());
-      setResults(uniqueResults);
+    if (!query.trim()) {
+      setResults([]);
       setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+      return;
+    }
+
+    setIsLoading(true);
+
+    const loadResults = async () => {
+      try {
+        const movies = await searchMovies(query);
+        const mappedMovies = movies.map((movie) => ({
+          ...movie,
+          image: movie.avatar_url || movie.image,
+          year: movie.release_date ? new Date(movie.release_date).getFullYear() : '',
+        }));
+        setResults(mappedMovies);
+      } catch (error) {
+        setResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadResults();
   }, [query]);
 
   return (

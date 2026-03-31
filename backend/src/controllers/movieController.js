@@ -296,11 +296,13 @@ exports.getMovieById = (req, res) => {
       m.background_url,
       c.name AS country,
       GROUP_CONCAT(g.name) AS genres,
+      COUNT(DISTINCT f.user_id) AS likes,
       m.required_vip_level
     FROM movies m
     LEFT JOIN countries c ON m.country_id = c.id
     LEFT JOIN movie_genres mg ON m.id = mg.movie_id
     LEFT JOIN genres g ON mg.genre_id = g.id
+    LEFT JOIN favorites f ON m.id = f.movie_id
     WHERE m.id = ?
     GROUP BY m.id
   `;
@@ -326,18 +328,25 @@ exports.searchMovies = (req, res) => {
 
   const sql = `
     SELECT
-      id,
-      title,
-      avatar_url,
-      release_date
-    FROM movies
-    WHERE title LIKE ?
+      m.id,
+      m.title,
+      m.avatar_url,
+      m.release_date,
+      c.name AS country,
+      GROUP_CONCAT(DISTINCT g.name) AS genres
+    FROM movies m
+    LEFT JOIN countries c ON m.country_id = c.id
+    LEFT JOIN movie_genres mg ON m.id = mg.movie_id
+    LEFT JOIN genres g ON mg.genre_id = g.id
+    WHERE m.title COLLATE utf8mb4_unicode_ci LIKE ?
+      OR m.description COLLATE utf8mb4_unicode_ci LIKE ?
+      OR g.name COLLATE utf8mb4_unicode_ci LIKE ?
+    GROUP BY m.id
   `;
 
-  db.query(sql, [`%${keyword}%`], (err, result) => {
-
+  const searchPattern = `%${keyword}%`;
+  db.query(sql, [searchPattern, searchPattern, searchPattern], (err, result) => {
     if (err) return res.status(500).json(err);
-
     res.json(result);
   });
 };
@@ -384,6 +393,83 @@ exports.getMoviesByCountry = (req, res) => {
   db.query(sql, [country_id], (err, result) => {
 
     if (err) return res.status(500).json(err);
+
+    res.json(result);
+  });
+};
+
+// ================= USER: FILTER MOVIES (MAIN API) =================
+exports.filterMovies = (req, res) => {
+  const { genre, country, year, sort } = req.query;
+
+  let sql = `
+    SELECT 
+      m.id,
+      m.title,
+      m.avatar_url,
+      m.background_url,
+      m.release_date,
+      c.name AS country,
+      GROUP_CONCAT(g.name) AS genres,
+      m.required_vip_level
+    FROM movies m
+    LEFT JOIN countries c ON m.country_id = c.id
+    LEFT JOIN movie_genres mg ON m.id = mg.movie_id
+    LEFT JOIN genres g ON mg.genre_id = g.id
+    WHERE 1=1
+  `;
+
+  let params = [];
+
+  // ===== FILTER GENRE (FIX CHUẨN) =====
+  if (genre) {
+    sql += `
+      AND EXISTS (
+        SELECT 1
+        FROM movie_genres mg2
+        JOIN genres g2 ON mg2.genre_id = g2.id
+        WHERE mg2.movie_id = m.id
+        AND LOWER(g2.name) = LOWER(?)
+      )
+    `;
+    params.push(genre);
+  }
+
+  // ===== FILTER COUNTRY =====
+  if (country) {
+    sql += " AND c.name = ?";
+    params.push(country);
+  }
+
+  // ===== FILTER YEAR =====
+  if (year) {
+    if (year === "Trước 2022") {
+      sql += " AND YEAR(m.release_date) < ?";
+      params.push(2022);
+    } else {
+      sql += " AND YEAR(m.release_date) = ?";
+      params.push(Number(year));
+    }
+  }
+
+  sql += " GROUP BY m.id";
+
+  // ===== SORT =====
+  if (sort === "new") {
+    sql += " ORDER BY m.release_date DESC";
+  } else if (sort === "old") {
+    sql += " ORDER BY m.release_date ASC";
+  } else if (sort === "rating") {
+    sql += " ORDER BY m.rating DESC";
+  } else if (sort === "views") {
+    sql += " ORDER BY m.views DESC";
+  }
+
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.error("SQL ERROR:", err);
+      return res.status(500).json(err);
+    }
 
     res.json(result);
   });

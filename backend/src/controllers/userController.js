@@ -7,9 +7,10 @@ exports.getProfile = (req, res) => {
   const userId = req.user.id;
 
   const sql = `
-    SELECT  username, email
-    FROM users 
-    WHERE id = ?
+    SELECT u.id, u.username, u.email, u.role_id, r.name AS role_name
+    FROM users u
+    LEFT JOIN roles r ON u.role_id = r.id
+    WHERE u.id = ?
   `;
 
   db.query(sql, [userId], (err, results) => {
@@ -121,42 +122,37 @@ exports.changePassword = async (req, res) => {
     const userId = req.user.id; // Lấy id từ token
 
     // 1️⃣ Lấy hash mật khẩu hiện tại từ DB
-    const selectSql = "SELECT password FROM users WHERE id=?";
+    const [results] = await db.promise().query(
+      "SELECT password FROM users WHERE id=?",
+      [userId]
+    );
 
-    db.query(selectSql, [userId], async (err, results) => {
-      if (err) {
-        return res.status(500).json({ message: "Lỗi server" });
-      }
+    if (results.length === 0) {
+      return res.status(404).json({ message: "User không tồn tại" });
+    }
 
-      if (results.length === 0) {
-        return res.status(404).json({ message: "User không tồn tại" });
-      }
+    const user = results[0];
 
-      const user = results[0];
+    // 2️⃣ Kiểm tra mật khẩu cũ
+    const isMatch = await bcrypt.compare(oldPass, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Mật khẩu cũ không đúng" });
+    }
 
-      // 2️⃣ Kiểm tra mật khẩu cũ
-      const isMatch = await bcrypt.compare(oldPass, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: "Mật khẩu cũ không đúng" });
-      }
+    // 3️⃣ Hash mật khẩu mới
+    const hashedPassword = await bcrypt.hash(newPass, 10);
 
-      // 3️⃣ Hash mật khẩu mới
-      const hashedPassword = await bcrypt.hash(newPass, 10);
+    // 4️⃣ Update mật khẩu mới vào DB
+    const [updateResult] = await db.promise().query(
+      "UPDATE users SET password=? WHERE id=?",
+      [hashedPassword, userId]
+    );
 
-      // 4️⃣ Update mật khẩu mới vào DB
-      const updateSql = "UPDATE users SET password=? WHERE id=?";
-      db.query(updateSql, [hashedPassword, userId], (err2, updateResult) => {
-        if (err2) {
-          return res.status(500).json({ message: "Lỗi server" });
-        }
+    if (updateResult.affectedRows === 0) {
+      return res.status(500).json({ message: "Cập nhật mật khẩu thất bại" });
+    }
 
-        if (updateResult.affectedRows === 0) {
-          return res.status(500).json({ message: "Cập nhật mật khẩu thất bại" });
-        }
-
-        res.json({ message: "Đổi mật khẩu thành công" });
-      });
-    });
+    res.json({ message: "Đổi mật khẩu thành công" });
 
   } catch (err) {
     console.error(err);
@@ -274,7 +270,6 @@ exports.updateUserforAdmin = (req, res) => {
   });
 };
 
-/* ================= DELETE USER (ADMIN) ================= */
 /* ================= DELETE USER (ADMIN) ================= */
 exports.deleteUser = (req, res) => {
   const { id } = req.params;

@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { 
-  Play, 
+import {
+  Play,
   Pause,
-  ArrowLeft, 
-  Volume2, 
-  Settings, 
+  ArrowLeft,
+  Volume2,
+  Settings,
   Maximize,
   MessageSquare,
   Send,
@@ -43,96 +43,96 @@ const Watch = () => {
   }, [id]);
 
   // Initialize Plyr with HLS support
- useEffect(() => {
-  if (!videoRef.current || !movie?.movie_url) {
-    console.warn('Video ref or movie URL not available');
-    return;
-  }
+  useEffect(() => {
+    if (!videoRef.current || !movie?.movie_url) {
+      console.warn('Video ref or movie URL not available');
+      return;
+    }
 
-  const video = videoRef.current;
-  let hls = null;
-  let plyr = null;
+    const video = videoRef.current;
+    let hls = null;
+    let plyr = null;
 
-  try {
-    plyr = new Plyr(video, {
-      controls: [
-        'play-large',
-        'play',
-        'progress',
-        'current-time',
-        'duration',
-        'mute',
-        'volume',
-        'settings',
-        'fullscreen'
-      ],
-      settings: ['quality', 'speed'],
-      speed: {
-        selected: 1,
-        options: [0.5, 0.75, 1, 1.25, 1.5, 2]
+    try {
+      plyr = new Plyr(video, {
+        controls: [
+          'play-large',
+          'play',
+          'progress',
+          'current-time',
+          'duration',
+          'mute',
+          'volume',
+          'settings',
+          'fullscreen'
+        ],
+        settings: ['quality', 'speed'],
+        speed: {
+          selected: 1,
+          options: [0.5, 0.75, 1, 1.25, 1.5, 2]
+        }
+      });
+
+      console.log('VIDEO URL:', movie.movie_url);
+
+      // ✅ FIX autoplay bị chặn
+      video.muted = true;
+
+      // ✅ HLS
+      if (movie.movie_url.includes('.m3u8')) {
+        if (Hls.isSupported()) {
+          hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: true
+          });
+
+          hls.loadSource(movie.movie_url);
+          hls.attachMedia(video);
+
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            console.log('HLS loaded');
+
+            // ✅ QUAN TRỌNG
+            plyr.play().catch(() => { });
+            setIsPlaying(true);
+          });
+
+          hls.on(Hls.Events.ERROR, (event, data) => {
+            console.error('HLS Error:', data);
+          });
+
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = movie.movie_url;
+
+          video.onloadedmetadata = () => {
+            video.play().catch(() => { });
+            setIsPlaying(true);
+          };
+        }
       }
-    });
-
-    console.log('VIDEO URL:', movie.movie_url);
-
-    // ✅ FIX autoplay bị chặn
-    video.muted = true;
-
-    // ✅ HLS
-    if (movie.movie_url.includes('.m3u8')) {
-      if (Hls.isSupported()) {
-        hls = new Hls({
-          enableWorker: true,
-          lowLatencyMode: true
-        });
-
-        hls.loadSource(movie.movie_url);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          console.log('HLS loaded');
-
-          // ✅ QUAN TRỌNG
-          plyr.play().catch(() => {});
-          setIsPlaying(true);
-        });
-
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          console.error('HLS Error:', data);
-        });
-
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // ✅ MP4
+      else {
         video.src = movie.movie_url;
 
         video.onloadedmetadata = () => {
-          video.play().catch(() => {});
+          video.play().catch(() => { });
           setIsPlaying(true);
         };
       }
-    } 
-    // ✅ MP4
-    else {
-      video.src = movie.movie_url;
 
-      video.onloadedmetadata = () => {
-        video.play().catch(() => {});
-        setIsPlaying(true);
-      };
+      // Sync trạng thái
+      plyr.on('play', () => setIsPlaying(true));
+      plyr.on('pause', () => setIsPlaying(false));
+
+    } catch (error) {
+      console.error('Player error:', error);
     }
 
-    // Sync trạng thái
-    plyr.on('play', () => setIsPlaying(true));
-    plyr.on('pause', () => setIsPlaying(false));
-
-  } catch (error) {
-    console.error('Player error:', error);
-  }
-
-  return () => {
-    if (hls) hls.destroy();
-    if (plyr) plyr.destroy();
-  };
-}, [movie?.movie_url]);
+    return () => {
+      if (hls) hls.destroy();
+      if (plyr) plyr.destroy();
+    };
+  }, [movie?.movie_url]);
 
   const handleMouseMove = () => {
     setShowControls(true);
@@ -142,12 +142,7 @@ const Watch = () => {
     }, 3000);
   };
 
-  const servers = [
-    { name: 'VIP 1 CINEMA+', quality: '4K Ultra HD', speed: 'Thanh khoản cao' },
-    { name: 'VIP 2 CINEMA+', quality: '2K HDR', speed: 'Ổn định' },
-    { name: 'Hệ thống phụ 1', quality: '1080p', speed: 'Bình thường' },
-    { name: 'Hệ thống phụ 2', quality: '720p', speed: 'Tiết kiệm' },
-  ];
+
 
   if (isLoading || !movie) {
     return (
@@ -160,26 +155,26 @@ const Watch = () => {
     );
   }
 
-  const movieRecommendations = recommendations && recommendations.length > 0 
-    ? recommendations 
+  const movieRecommendations = recommendations && recommendations.length > 0
+    ? recommendations
     : [];
 
   return (
     <div className="min-h-screen bg-surface text-white pt-24 pb-32">
       {/* Immersive Theater Ambient Glow */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-30">
-         <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/20 blur-[150px] rounded-full animate-pulse"></div>
-         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-500/10 blur-[120px] rounded-full"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/20 blur-[150px] rounded-full animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-500/10 blur-[120px] rounded-full"></div>
       </div>
 
       <div className="max-w-[1920px] mx-auto px-6 lg:px-12 relative z-10">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-          
+
           {/* Main Content Area */}
           <div className="xl:col-span-9 space-y-12 relative z-20">
-            
+
             {/* Premium Video Player Container */}
-            <section 
+            <section
               className="relative z-40 aspect-video rounded-[3rem] overflow-hidden bg-black shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/5 group"
               onMouseMove={handleMouseMove}
               onMouseLeave={() => isPlaying && setShowControls(false)}
@@ -194,11 +189,11 @@ const Watch = () => {
                     crossOrigin="anonymous"
                     poster={movie.image}
                   />
-                  
+
                   {/* Fallback Play Overlay - Only shown if video hasn't started yet */}
                   <AnimatePresence>
                     {!isPlaying && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.2 }}
@@ -215,14 +210,14 @@ const Watch = () => {
               ) : (
                 // Fallback if no movie URL
                 <div className="absolute inset-0 z-0">
-                  <img 
-                    src={movie.image} 
+                  <img
+                    src={movie.image}
                     className={`w-full h-full object-cover transition-all duration-1000 ${isPlaying ? 'brightness-[0.8] scale-100' : 'brightness-[0.4] scale-105'}`}
                     alt={movie.title}
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20"></div>
-                  <motion.div 
+                  <motion.div
                     className="absolute inset-0 flex flex-col items-center justify-center z-20 gap-6"
                   >
                     <div className="text-center">
@@ -237,13 +232,6 @@ const Watch = () => {
             {/* Content Info & Actions */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 px-4">
               <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-4">
-                   <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-lg">
-                      <Zap className="w-3 h-3 text-primary" />
-                      <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Cực hot</span>
-                   </div>
-                   <span className="text-[11px] font-black uppercase tracking-widest text-white/40">{movie.year} • {movie.genre || 'HÀNH ĐỘNG'} • 12 TẬP</span>
-                </div>
                 <h1 className="text-5xl lg:text-7xl font-black uppercase tracking-tighter text-glow italic leading-none">{movie.title}</h1>
                 <p className="text-white/60 font-medium max-w-3xl leading-relaxed italic border-l-2 border-primary/30 pl-6">
                   {movie.description || "Trải nghiệm hành trình điện ảnh đỉnh cao với chất lượng hình ảnh và âm thanh sống động chưa từng có. Một siêu phẩm không thể bỏ lỡ trong mùa hè này."}
@@ -252,154 +240,105 @@ const Watch = () => {
 
               <div className="flex gap-4 shrink-0">
                 <button className="w-14 h-14 rounded-2xl glass-dark border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all group">
-                   <Heart className="w-6 h-6 group-hover:fill-primary group-hover:text-primary transition-all scale-95 group-active:scale-125" />
+                  <Heart className="w-6 h-6 group-hover:fill-primary group-hover:text-primary transition-all scale-95 group-active:scale-125" />
                 </button>
-                <button className="w-14 h-14 rounded-2xl glass-dark border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all group">
-                   <Share2 className="w-6 h-6 transition-transform group-hover:rotate-12" />
-                </button>
-                <Link to="/vip" className="btn-primary py-4 px-10 text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20">
+                {/* <Link to="/vip" className="btn-primary py-4 px-10 text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20">
                    Gói VIP
-                </Link>
+                </Link> */}
               </div>
-            </div>
-
-            {/* Detailed Server Selection */}
-            <div className="glass-dark rounded-[3rem] p-10 md:p-14 border border-white/5 relative overflow-hidden z-10">
-               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -mr-32 -mt-32"></div>
-               
-               <div className="flex items-center justify-between mb-12 relative z-10">
-                  <div className="flex items-center gap-4">
-                    <div className="w-1 h-8 bg-primary rounded-full shadow-[0_0_15px_rgba(229,9,20,0.5)]"></div>
-                    <h3 className="text-xl font-black uppercase tracking-[0.2em]">Hệ thống server</h3>
-                  </div>
-                  <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/5">
-                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                     <span className="text-[10px] font-black uppercase tracking-widest text-green-500">Trực tuyến</span>
-                  </div>
-               </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
-                  {servers.map((server, i) => (
-                    <button 
-                      key={i}
-                      onClick={() => setActiveServer(i)}
-                      className={`group p-6 rounded-3xl border transition-all duration-500 text-left ${activeServer === i ? 'bg-primary border-primary shadow-[0_20px_40px_rgba(229,9,20,0.25)]' : 'bg-surface border-white/5 hover:border-white/10'}`}
-                    >
-                       <div className="flex items-center justify-between mb-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${activeServer === i ? 'bg-white/20' : 'bg-primary/10'}`}>
-                             <Cpu className={`w-5 h-5 ${activeServer === i ? 'text-white' : 'text-primary'}`} />
-                          </div>
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${activeServer === i ? 'text-white/60' : 'text-primary'}`}>{activeServer === i ? 'Đang chọn' : 'Sẵn sàng'}</span>
-                       </div>
-                       <h4 className="font-black text-sm uppercase tracking-widest mb-1">{server.name}</h4>
-                       <div className="flex items-center gap-3 opacity-60">
-                          <span className="text-[9px] font-black uppercase tracking-widest">{server.quality}</span>
-                          <span className="w-1 h-1 bg-white/20 rounded-full"></span>
-                          <span className="text-[9px] font-black uppercase tracking-widest">{server.speed}</span>
-                       </div>
-                    </button>
-                  ))}
-               </div>
             </div>
 
             {/* Advanced Section: Comments */}
             <div className="px-4 space-y-12 pb-20">
-               <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-1 h-10 bg-primary rounded-full"></div>
-                    <div>
-                      <h3 className="text-3xl font-black uppercase tracking-tight text-white flex items-center gap-4">
-                        <MessageSquare className="w-7 h-7 text-primary" />
-                        Bình luận
-                      </h3>
-                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mt-1">Hơn 4,281 lượt thảo luận</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-1 h-10 bg-primary rounded-full"></div>
+                  <div>
+                    <h3 className="text-3xl font-black uppercase tracking-tight text-white flex items-center gap-4">
+                      <MessageSquare className="w-7 h-7 text-primary" />
+                      Bình luận
+                    </h3>
+                  </div>
+                </div>
+              </div>
+
+              {user ? (
+                <div className="flex gap-8">
+                  <div className="w-16 h-16 rounded-[1.25rem] bg-surface overflow-hidden border border-white/10 shrink-0 shadow-2xl">
+                    <img src={
+                      user.avatar ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || "User")}&background=random`
+                    } className="w-full h-full object-cover" alt="User" />
+                  </div>
+                  <div className="flex-grow space-y-4">
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      className="w-full bg-surface-container-low border border-white/5 rounded-[2rem] p-8 text-sm focus:ring-2 focus:ring-primary/20 min-h-[160px] resize-none outline-none placeholder:text-white/10 transition-all font-medium text-white shadow-inner"
+                      placeholder="Cùng thảo luận về siêu phẩm này..."
+                    ></textarea>
+                    <div className="flex justify-end gap-6 items-center">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Tuân thủ quy tắc cộng đồng CINEMA+</span>
+                      <button className="btn-primary py-4 px-12 text-xs uppercase tracking-[0.3em] font-black group">
+                        <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                        Gửi bình luận
+                      </button>
                     </div>
                   </div>
-               </div>
-
-               {user ? (
-                 <div className="flex gap-8">
-                   <div className="w-16 h-16 rounded-[1.25rem] bg-surface overflow-hidden border border-white/10 shrink-0 shadow-2xl">
-                     <img src={user?.avatar || "https://ui-avatars.com/api/?name=User&background=random"} className="w-full h-full object-cover" alt="User" />
-                   </div>
-                   <div className="flex-grow space-y-4">
-                     <textarea 
-                       value={comment}
-                       onChange={(e) => setComment(e.target.value)}
-                       className="w-full bg-surface-container-low border border-white/5 rounded-[2rem] p-8 text-sm focus:ring-2 focus:ring-primary/20 min-h-[160px] resize-none outline-none placeholder:text-white/10 transition-all font-medium text-white shadow-inner" 
-                       placeholder="Cùng thảo luận về siêu phẩm này..."
-                     ></textarea>
-                     <div className="flex justify-end gap-6 items-center">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Tuân thủ quy tắc cộng đồng CINEMA+</span>
-                        <button className="btn-primary py-4 px-12 text-xs uppercase tracking-[0.3em] font-black group">
-                         <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                         Gửi bình luận
-                       </button>
-                     </div>
-                   </div>
-                 </div>
-               ) : (
-                 <Link to="/login" className="flex items-center gap-6 p-8 glass-dark rounded-[2rem] border border-white/5 hover:border-primary/30 transition-all group">
-                   <div className="w-16 h-16 rounded-[1.25rem] bg-surface-container flex items-center justify-center border border-white/10 shrink-0">
-                     <MessageSquare className="w-7 h-7 text-on-surface-variant group-hover:text-primary transition-colors" />
-                   </div>
-                   <div>
-                     <p className="text-base font-black text-white uppercase tracking-wide">Đăng nhập để bình luận</p>
-                     <p className="text-xs text-on-surface-variant/60 font-medium mt-1">Chia sẻ cảm nhận của bạn về bộ phim này cùng cộng đồng Cinema+</p>
-                   </div>
-                 </Link>
-               )}
+                </div>
+              ) : (
+                <Link to="/login" className="flex items-center gap-6 p-8 glass-dark rounded-[2rem] border border-white/5 hover:border-primary/30 transition-all group">
+                  <div className="w-16 h-16 rounded-[1.25rem] bg-surface-container flex items-center justify-center border border-white/10 shrink-0">
+                    <MessageSquare className="w-7 h-7 text-on-surface-variant group-hover:text-primary transition-colors" />
+                  </div>
+                  <div>
+                    <p className="text-base font-black text-white uppercase tracking-wide">Đăng nhập để bình luận</p>
+                    <p className="text-xs text-on-surface-variant/60 font-medium mt-1">Chia sẻ cảm nhận của bạn về bộ phim này cùng cộng đồng Cinema+</p>
+                  </div>
+                </Link>
+              )}
             </div>
           </div>
 
           {/* Sidebar Area: Up Next */}
           <aside className="xl:col-span-3 space-y-10 relative z-10">
-             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                   <div className="w-1 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(229,9,20,0.5)]"></div>
-                   <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Xem tiếp (Next)</h2>
-                </div>
-                <Link to="/filter" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Khám phá thêm</Link>
-             </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-1 h-6 bg-primary rounded-full shadow-[0_0_10px_rgba(229,9,20,0.5)]"></div>
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Khám phá thêm</h2>
+              </div>
+            </div>
 
-             <div className="space-y-4 max-h-[1800px] overflow-y-auto pr-3 hide-scrollbar custom-scrollbar">
-                {movieRecommendations.map((rec, i) => (
-                  <Link 
-                    key={rec.id} 
-                    to={`/watch/${rec.id}`} 
-                    className={`group flex gap-4 p-3 rounded-[1.75rem] border border-transparent transition-all duration-500 relative overflow-hidden hover:bg-white/5 hover:border-white/5 ${String(rec.id) === id ? 'bg-white/10 border-white/10 ring-1 ring-primary/30' : ''}`}
-                  >
-                    <div className="w-32 aspect-[3/4] sm:aspect-video xl:aspect-square shrink-0 rounded-2xl overflow-hidden relative border border-white/5 shadow-xl group-hover:shadow-primary/20">
-                      <img src={rec.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={rec.title} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
-                      <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md rounded-md border border-white/10 text-[8px] font-black text-white uppercase">{rec.tag || 'HD'}</div>
-                    </div>
-                    <div className="flex flex-col justify-center flex-1 py-1 min-w-0">
-                      <h4 className="font-black text-xs text-white group-hover:text-primary transition-colors line-clamp-2 tracking-wide uppercase leading-[1.4]">{rec.title}</h4>
-                      <div className="flex items-center gap-4 mt-3">
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-lg">
-                           <Star className="w-2.5 h-2.5 text-primary fill-primary" />
-                           <span className="text-[9px] font-black text-white/80">{rec.rating || '8.5'}</span>
-                        </div>
-                        <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">{rec.year}</span>
+            <div className="space-y-4 max-h-[1800px] overflow-y-auto pr-3 hide-scrollbar custom-scrollbar">
+              {movieRecommendations.map((rec, i) => (
+                <Link
+                  key={rec.id}
+                  to={`/watch/${rec.id}`}
+                  className={`group flex gap-4 p-3 rounded-[1.75rem] border border-transparent transition-all duration-500 relative overflow-hidden hover:bg-white/5 hover:border-white/5 ${String(rec.id) === id ? 'bg-white/10 border-white/10 ring-1 ring-primary/30' : ''}`}
+                >
+                  <div className="w-32 aspect-[3/4] sm:aspect-video xl:aspect-square shrink-0 rounded-2xl overflow-hidden relative border border-white/5 shadow-xl group-hover:shadow-primary/20">
+                    <img src={rec.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={rec.title} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
+                    <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-md rounded-md border border-white/10 text-[8px] font-black text-white uppercase">{rec.tag || 'HD'}</div>
+                  </div>
+                  <div className="flex flex-col justify-center flex-1 py-1 min-w-0">
+                    <h4 className="font-black text-xs text-white group-hover:text-primary transition-colors line-clamp-2 tracking-wide uppercase leading-[1.4]">{rec.title}</h4>
+                    <div className="flex items-center gap-4 mt-3">
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-lg">
+                        <Star className="w-2.5 h-2.5 text-primary fill-primary" />
+                        <span className="text-[9px] font-black text-white/80">{rec.rating || '8.5'}</span>
                       </div>
+                      <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">{rec.year}</span>
                     </div>
-                    {String(rec.id) === id && (
-                       <div className="absolute top-4 right-4 animate-pulse">
-                          <div className="w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_rgba(229,9,20,1)]"></div>
-                       </div>
-                    )}
-                  </Link>
-                ))}
-             </div>
-
-             {/* Small Promo Sidebar Badge */}
-             <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-primary/20 to-blue-600/10 border border-white/10 relative overflow-hidden group cursor-pointer hover:border-primary/40 transition-colors mt-12">
-                <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/20 rounded-full blur-[40px] group-hover:bg-primary/40 transition-colors"></div>
-                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-4 italic">Ưu đãi độc quyền</h4>
-                <p className="text-sm font-black text-white uppercase tracking-tight leading-tight">Mở khóa chất lượng <br /> âm thanh Dolby Atmos</p>
-                <ChevronRight className="w-6 h-6 text-white absolute bottom-8 right-8 group-hover:translate-x-2 transition-transform" />
-             </div>
+                  </div>
+                  {String(rec.id) === id && (
+                    <div className="absolute top-4 right-4 animate-pulse">
+                      <div className="w-2 h-2 bg-primary rounded-full shadow-[0_0_10px_rgba(229,9,20,1)]"></div>
+                    </div>
+                  )}
+                </Link>
+              ))}
+            </div>
           </aside>
         </div>
       </div>

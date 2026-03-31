@@ -12,7 +12,7 @@ const getAuthHeaders = () => {
   };
 };
 
-// Get all movies
+// Get all movies 
 export const getAllMovies = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/movies`, getAuthHeaders());
@@ -24,9 +24,11 @@ export const getAllMovies = async () => {
 };
 
 // Get all public movies (NO AUTH REQUIRED)
-export const getPublicMovies = async () => {
+export const getPublicMovies = async (params = {}) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/movies/public`);
+    const response = await axios.get(`${API_BASE_URL}/movies/public/filter`, {
+      params,
+    });
     return response.data;
   } catch (error) {
     console.error('Error fetching public movies:', error);
@@ -49,7 +51,7 @@ export const getMovieById = async (id) => {
 export const searchMovies = async (query) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/movies/search`, {
-      params: { q: query },
+      params: { keyword: query },
     });
     return response.data;
   } catch (error) {
@@ -132,6 +134,31 @@ export const deleteMovie = async (id) => {
     return response.data;
   } catch (error) {
     console.error('Error deleting movie:', error);
+    throw error;
+  }
+};
+
+// Upload movie avatar and background images
+export const uploadMovieImages = async (files = {}) => {
+  try {
+    const formData = new FormData();
+
+    if (files.avatar) {
+      formData.append('avatar', files.avatar);
+    }
+    if (files.background) {
+      formData.append('background', files.background);
+    }
+
+    const response = await axios.post(
+      `${API_BASE_URL}/upload/images`,
+      formData,
+      getAuthHeaders()
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Error uploading movie images:', error);
     throw error;
   }
 };

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Bell, X, History, Clock, TrendingUp, Star, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FEATURED_MOVIES, TRENDING_MOVIES } from '../../constants';
+import { searchMovies } from '../../service/movie_service';
 import { useAuth } from '../../hooks/useAuth';
 
 const Navbar = () => {
@@ -12,25 +12,64 @@ const Navbar = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const searchRef = useRef(null);
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const SEARCH_HISTORY_KEY = 'cinema_search_history';
+  const MAX_HISTORY_ITEMS = 6;
+
+  const [searchHistory, setSearchHistory] = useState([]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery) {
+      addSearchHistory(trimmedQuery);
+      navigate(`/search?q=${encodeURIComponent(trimmedQuery)}`);
       setIsSearchFocused(false);
     }
   };
 
-  // Mock search history
-  const searchHistory = [
-    "Bóng đêm rực rỡ",
-    "Phim hành động 2024",
-    "Netflix Originals"
-  ];
+  const saveSearchHistory = (history) => {
+    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+  };
+
+  const addSearchHistory = (query) => {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+
+    setSearchHistory((prev) => {
+      const next = [trimmedQuery, ...prev.filter((item) => item !== trimmedQuery)];
+      const limited = next.slice(0, MAX_HISTORY_ITEMS);
+      saveSearchHistory(limited);
+      return limited;
+    });
+  };
+
+  const clearSearchHistory = () => {
+    localStorage.removeItem(SEARCH_HISTORY_KEY);
+    setSearchHistory([]);
+  };
+
+  const handleHistoryItemClick = (term) => {
+    setSearchQuery(term);
+    addSearchHistory(term);
+    navigate(`/search?q=${encodeURIComponent(term)}`);
+    setIsSearchFocused(false);
+  };
+
+  useEffect(() => {
+    const storedHistory = localStorage.getItem(SEARCH_HISTORY_KEY);
+    if (storedHistory) {
+      try {
+        setSearchHistory(JSON.parse(storedHistory));
+      } catch (e) {
+        setSearchHistory([]);
+      }
+    }
+  }, []);
 
   // Mock trending searches
   const trendingSearches = [
@@ -40,14 +79,31 @@ const Navbar = () => {
   ];
 
   useEffect(() => {
-    if (searchQuery.trim()) {
-      const filtered = [...FEATURED_MOVIES, ...TRENDING_MOVIES].filter(movie =>
-        movie.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setSearchResults(filtered.slice(0, 5));
-    } else {
+    if (!searchQuery.trim()) {
       setSearchResults([]);
+      setIsSearching(false);
+      return;
     }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const movies = await searchMovies(searchQuery);
+        const mappedMovies = movies.map((movie) => ({
+          ...movie,
+          image: movie.avatar_url || movie.image,
+          year: movie.release_date ? new Date(movie.release_date).getFullYear() : '',
+          genre: movie.genres ? movie.genres.split(',')[0] : '',
+        }));
+        setSearchResults(mappedMovies.slice(0, 5));
+      } catch (error) {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   useEffect(() => {
@@ -164,7 +220,12 @@ const Navbar = () => {
                           <Link to="/filter" className="text-[11px] text-primary font-black uppercase tracking-widest hover:underline decoration-primary/30">Xem tất cả</Link>
                         </div>
                         <div className="max-h-[450px] overflow-y-auto hide-scrollbar py-2">
-                          {searchResults.length > 0 ? (
+                          {isSearching ? (
+                            <div className="p-16 flex flex-col items-center justify-center text-center opacity-40">
+                              <Search className="text-on-surface-variant w-12 h-12 mb-6 animate-spin" />
+                              <p className="text-on-surface-variant text-sm font-bold uppercase tracking-widest">Đang tìm kiếm...</p>
+                            </div>
+                          ) : searchResults.length > 0 ? (
                             searchResults.map((movie) => (
                               <Link
                                 key={movie.id}
@@ -206,18 +267,28 @@ const Navbar = () => {
                             <History className="w-5 h-5 text-primary" />
                             Lịch sử tìm kiếm
                           </h3>
-                          <button className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-red-500 transition-colors">Xóa sạch</button>
+                          <button onClick={clearSearchHistory} className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-red-500 transition-colors">Xóa sạch</button>
                         </div>
                         <div className="space-y-3">
-                          {searchHistory.map((item, index) => (
-                            <div key={index} className="group flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all cursor-pointer border border-transparent hover:border-white/5">
-                              <div className="flex items-center gap-4">
-                                <Clock className="w-4 h-4 text-on-surface-variant group-hover:text-primary transition-colors" />
-                                <span className="text-sm font-bold text-on-surface/80 group-hover:text-white">{item}</span>
-                              </div>
-                              <X className="w-4 h-4 text-on-surface-variant/20 hover:text-red-500 transition-colors" />
+                          {searchHistory.length > 0 ? (
+                            searchHistory.map((item, index) => (
+                              <button
+                                key={index}
+                                onClick={() => handleHistoryItemClick(item)}
+                                className="w-full text-left group flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all cursor-pointer border border-transparent hover:border-white/5"
+                              >
+                                <div className="flex items-center gap-4">
+                                  <Clock className="w-4 h-4 text-on-surface-variant group-hover:text-primary transition-colors" />
+                                  <span className="text-sm font-bold text-on-surface/80 group-hover:text-white">{item}</span>
+                                </div>
+                                <X className="w-4 h-4 text-on-surface-variant/20 group-hover:text-red-500 transition-colors" />
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-8 rounded-3xl bg-white/5 text-center opacity-70">
+                              <p className="text-sm font-bold uppercase tracking-[0.2em] text-on-surface-variant">Chưa có lịch sử tìm kiếm</p>
                             </div>
-                          ))}
+                          )}
                         </div>
                       </div>
                     )}

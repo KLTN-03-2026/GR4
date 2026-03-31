@@ -31,7 +31,9 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
     }
 
-    setLoading(false);
+    if (!savedToken) {
+      setLoading(false);
+    }
 
     const handleStorageChange = () => {
       const updatedToken = getStoredToken();
@@ -54,17 +56,70 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-useEffect(() => {
-  const fetchProfile = async () => {
-    try {
+  useEffect(() => {
+    const fetchProfile = async () => {
       const savedToken = getStoredToken();
-      if (!savedToken) return;
+      if (!savedToken) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const res = await getProfile();
+
+        const roleName = res.data.role || res.data.role_name;
+        const userData = {
+          ...res.data,
+          name: res.data.username,
+          role_id: res.data.role_id,
+          role:
+            typeof roleName === 'string'
+              ? roleName.toLowerCase() === 'admin'
+                ? 'admin'
+                : 'user'
+              : res.data.role_id === 1
+              ? 'admin'
+              : 'user',
+        };
+
+        setUser(userData);
+
+        if (localStorage.getItem("token")) {
+          localStorage.setItem("user", JSON.stringify(userData));
+        } else {
+          sessionStorage.setItem("user", JSON.stringify(userData));
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const updateProfile = async (data) => {
+    try {
+      await updateProfileAPI(data);
 
       const res = await getProfile();
 
+      const roleName = res.data.role || res.data.role_name;
       const userData = {
         ...res.data,
         name: res.data.username,
+        role_id: res.data.role_id,
+        role:
+          typeof roleName === 'string'
+            ? roleName.toLowerCase() === 'admin'
+              ? 'admin'
+              : 'user'
+            : res.data.role_id === 1
+            ? 'admin'
+            : 'user',
       };
 
       setUser(userData);
@@ -75,36 +130,9 @@ useEffect(() => {
         sessionStorage.setItem("user", JSON.stringify(userData));
       }
     } catch (err) {
-      console.error(err);
+      throw err;
     }
   };
-
-  fetchProfile();
-}, []);
-
-const updateProfile = async (data) => {
-  try {
-    await updateProfileAPI(data);
-
-    const res = await getProfile();
-
-    const userData = {
-      ...res.data,
-      name: res.data.username,
-    };
-
-    setUser(userData);
-
-    if (localStorage.getItem("token")) {
-      localStorage.setItem("user", JSON.stringify(userData));
-    } else {
-      sessionStorage.setItem("user", JSON.stringify(userData));
-    }
-
-  } catch (err) {
-    throw err;
-  }
-};
 
 const changePassword = async (data) => {
   try {

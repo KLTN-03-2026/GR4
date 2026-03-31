@@ -37,3 +37,19 @@ export const changePassword = async (data) => {
     getAuthHeaders()
   );
 };
+
+export const getFavorites = async () => {
+  return axios.get(`${API}/me/favorites`, getAuthHeaders());
+};
+
+export const addFavorite = async (movieId) => {
+  return axios.post(
+    `${API}/me/favorites`,
+    { movie_id: movieId },
+    getAuthHeaders()
+  );
+};
+
+export const removeFavorite = async (movieId) => {
+  return axios.delete(`${API}/me/favorites/${movieId}`, getAuthHeaders());
+};

@@ -51,6 +51,7 @@ const Login = () => {
       id: user.id,
       name: user.username,
       email: user.email,
+      role_id: user.role_id,
       role: user.role_id === 1 ? 'admin' : 'user',
     };
 
@@ -104,6 +105,7 @@ const Login = () => {
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/20 blur-[80px] -z-10 group-hover:bg-primary/30 transition-colors duration-700"></div>
           
           <div className="mb-12 text-center space-y-4">
+            <Link to="/"> 
             <motion.div 
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -112,6 +114,8 @@ const Login = () => {
             >
               <Sparkles className="w-10 h-10 text-primary animate-pulse" />
             </motion.div>
+            </Link>
+
             <div className="space-y-2">
               <h1 className="text-4xl font-black text-white uppercase tracking-tighter text-glow italic">Cinema+</h1>
               <p className="text-on-surface-variant/60 text-[10px] font-black uppercase tracking-[0.3em]">Cổng vào thế giới điện ảnh</p>

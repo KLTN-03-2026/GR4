@@ -50,15 +50,17 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="mt-auto pt-6 border-t border-surface-container-high">
-        <button 
-          onClick={() => navigate('/login')}
-          className="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest/30 rounded-lg mx-2 transition-all hover:text-on-surface text-left"
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="text-sm">Logout</span>
-        </button>
-      </div>
+      <div className="mt-8 pt-8 border-t border-white/5 px-2">
+              <button
+                onClick={() => navigate('/login')}
+                className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-red-500 hover:bg-red-500/10 transition-all duration-300 group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/20 transition-colors">
+                  <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest">Đăng xuất hệ thống</span>
+              </button>
+            </div>
     </aside>
   );
 }

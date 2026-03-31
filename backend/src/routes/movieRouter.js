@@ -19,6 +19,8 @@ router.get("/country/:country_id", movieController.getMoviesByCountry);
 router.get("/search", movieController.searchMovies);
 
 // Get movie detail
+router.get("/public/filter", movieController.filterMovies);
+router.get("/public", movieController.getPublicMovies);
 router.get("/:id", movieController.getMovieById);
 
 // ================= ADMIN (PROTECTED) =================

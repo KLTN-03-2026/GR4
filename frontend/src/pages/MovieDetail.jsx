@@ -8,6 +8,7 @@ import { useMovieDetail } from '../hooks/useMovieDetail';
 import { useComments } from '../hooks/useComments';
 import { isVipActive } from '../utils/vip';
 import { useAuth } from '../hooks/useAuth';
+import { getFavorites, addFavorite, removeFavorite } from '../service/user_service';
 import MovieCard from '../components/shared/MovieCard';
 
 const MovieDetail = () => {
@@ -18,8 +19,52 @@ const MovieDetail = () => {
   const { movie, recommendations, isLoading } = useMovieDetail(id);
   const { comments, newComment, setNewComment, addComment } = useComments();
   const { user } = useAuth();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   const isVip = isVipActive(user);
+
+  useEffect(() => {
+    if (!user) {
+      setIsFavorite(false);
+      return;
+    }
+
+    const loadFavorites = async () => {
+      try {
+        const response = await getFavorites();
+        const favorites = response.data || [];
+        setIsFavorite(favorites.some((item) => String(item.id) === String(id)));
+      } catch (error) {
+        console.error('Load favorites failed', error);
+      }
+    };
+
+    loadFavorites();
+  }, [user, id]);
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    setFavoriteLoading(true);
+    try {
+      if (isFavorite) {
+        await removeFavorite(id);
+        setIsFavorite(false);
+      } else {
+        await addFavorite(id);
+        setIsFavorite(true);
+      }
+      window.dispatchEvent(new Event('favoritesUpdated'));
+    } catch (error) {
+      console.error('Toggle favorite failed', error);
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -129,9 +174,13 @@ const MovieDetail = () => {
                 <Play className="w-6 h-6" />
                 Xem trailer
               </button>
-              <button className="btn-secondary px-8 py-5">
-                <Heart className="w-5 h-5" />
-                Yêu thích
+              <button
+                disabled={favoriteLoading}
+                onClick={handleToggleFavorite}
+                className={`btn-secondary px-8 py-5 flex items-center gap-3 ${isFavorite ? 'bg-red-600 text-white border-red-600' : ''}`}
+              >
+                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-white' : ''}`} />
+                {favoriteLoading ? 'Đang xử lý...' : isFavorite ? 'Đã yêu thích' : 'Yêu thích'}
               </button>
             </motion.div>
           </div>

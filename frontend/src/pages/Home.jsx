@@ -9,14 +9,15 @@ import { usePublicMovies } from '../hooks/usePublicMovies';
 
 const Home = () => {
   const { movies: dbMovies } = usePublicMovies();
-  const [activeHero, setActiveHero] = useState(0);
+  const [activeBackground, setActiveBackground] = useState(0);
 
   // Transform backend data to frontend format
   const transformMovie = (movie) => ({
     id: movie.id,
     title: movie.title,
     description: movie.description,
-    image: movie.avatar_url || movie.background_url,
+    image: movie.avatar_url || movie.background_url || movie.hero || movie.hero_url,
+    background: movie.background_url || movie.hero || movie.hero_url || movie.avatar_url,
     rating: parseFloat(movie.rating) || 8.5,
     year: movie.release_date ? new Date(movie.release_date).getFullYear() : 2024,
     genre: movie.genres ? movie.genres.split(',')[0].trim() : 'Phim',
@@ -31,16 +32,16 @@ const Home = () => {
   const newUpdates = movies.length > 0 ? [...movies].reverse() : [];
   const trendingMovies = movies.length > 0 ? movies : [];
 
-  // Auto-slide hero
+  // Auto-slide background carousel
   useEffect(() => {
     if (movies.length === 0) return;
     const timer = setInterval(() => {
-      setActiveHero((prev) => (prev + 1) % movies.length);
+      setActiveBackground((prev) => (prev + 1) % movies.length);
     }, 8000);
     return () => clearInterval(timer);
   }, [movies]);
 
-  const heroMovie = movies.length > 0 ? movies[activeHero] : {
+  const backgroundMovie = movies.length > 0 ? movies[activeBackground] : {
     id: 1,
     title: 'Cinema',
     description: 'Hãy khám phá kho phim',
@@ -52,11 +53,11 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-surface overflow-x-hidden">
-      {/* Immersive Hero Section */}
+      {/* Immersive Background Section */}
       <section className="relative h-[95vh] w-full flex items-center">
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeHero}
+            key={activeBackground}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -64,8 +65,8 @@ const Home = () => {
             className="absolute inset-0 z-0"
           >
             <img
-              src={heroMovie.image}
-              alt={heroMovie.title}
+              src={backgroundMovie.background || backgroundMovie.image}
+              alt={backgroundMovie.title}
               className="w-full h-full object-cover scale-105 brightness-[0.4]"
               referrerPolicy="no-referrer"
             />
@@ -78,7 +79,7 @@ const Home = () => {
         <div className="relative z-10 px-8 md:px-20 max-w-[1920px] mx-auto w-full pt-20">
           <div className="max-w-4xl space-y-8">
             <motion.div
-              key={`meta-${activeHero}`}
+              key={`meta-${activeBackground}`}
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -89,45 +90,45 @@ const Home = () => {
               </span>
               <div className="flex items-center gap-2 glass px-3 py-1 rounded-lg">
                 <Star className="w-3.5 h-3.5 text-primary fill-primary" />
-                <span className="text-sm font-black text-white">{heroMovie.rating || '8.9'}</span>
+                <span className="text-sm font-black text-white">{backgroundMovie.rating || '8.9'}</span>
               </div>
               <span className="text-on-surface-variant text-xs font-black uppercase tracking-[0.2em] opacity-60">
-                {heroMovie.year} • {heroMovie.genre || 'HÀNH ĐỘNG'}
+                {backgroundMovie.year} • {backgroundMovie.genre || 'HÀNH ĐỘNG'}
               </span>
             </motion.div>
 
             <motion.h1
-              key={`title-${activeHero}`}
+              key={`title-${activeBackground}`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
               className="text-7xl md:text-9xl font-black font-manrope tracking-tighter leading-[0.85] text-white uppercase text-glow"
             >
-              {heroMovie.title}
+              {backgroundMovie.title}
             </motion.h1>
 
             <motion.p
-              key={`desc-${activeHero}`}
+              key={`desc-${activeBackground}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
               className="text-on-surface-variant/80 text-lg md:text-xl max-w-2xl font-medium leading-relaxed"
             >
-              {heroMovie.description || "Một hành trình xuyên không gian đầy kịch tính, khám phá những bí ẩn chưa từng được tiết lộ của vũ trụ. Trải nghiệm kịch tính đến nghẹt thở với dàn diễn viên huyền thoại."}
+              {backgroundMovie.description || "Một hành trình xuyên không gian đầy kịch tính, khám phá những bí ẩn chưa từng được tiết lộ của vũ trụ. Trải nghiệm kịch tính đến nghẹt thở với dàn diễn viên huyền thoại."}
             </motion.p>
 
             <motion.div
-              key={`btns-${activeHero}`}
+              key={`btns-${activeBackground}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
               className="flex flex-wrap gap-5 pt-4"
             >
-              <Link to={`/watch/${heroMovie.id}`} className="btn-primary px-12 py-5 text-base uppercase tracking-widest shadow-[0_20px_40px_rgba(229,9,20,0.3)]">
+              <Link to={`/watch/${backgroundMovie.id}`} className="btn-primary px-12 py-5 text-base uppercase tracking-widest shadow-[0_20px_40px_rgba(229,9,20,0.3)]">
                 <Play className="w-6 h-6 fill-white" />
                 Xem ngay
               </Link>
-              <Link to={`/movie/${heroMovie.id}`} className="btn-secondary px-10 py-5 text-base uppercase tracking-widest bg-white/5 hover:bg-white/10">
+              <Link to={`/movie/${backgroundMovie.id}`} className="btn-secondary px-10 py-5 text-base uppercase tracking-widest bg-white/5 hover:bg-white/10">
                 <Info className="w-6 h-6" />
                 Chi tiết
               </Link>
@@ -138,8 +139,8 @@ const Home = () => {
               {movies.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => setActiveHero(i)}
-                  className={`h-1.5 transition-all duration-500 rounded-full ${i === activeHero ? 'w-12 bg-primary' : 'w-6 bg-white/20 hover:bg-white/40'}`}
+                  onClick={() => setActiveBackground(i)}
+                  className={`h-1.5 transition-all duration-500 rounded-full ${i === activeBackground ? 'w-12 bg-primary' : 'w-6 bg-white/20 hover:bg-white/40'}`}
                 />
               ))}
             </div>

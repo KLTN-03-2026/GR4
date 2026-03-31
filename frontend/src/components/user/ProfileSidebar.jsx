@@ -120,7 +120,7 @@ const ProfileSidebar = ({ onEditProfile }) => {
           <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/20 transition-colors">
             <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform" />
           </div>
-          <span className="text-xs font-black uppercase tracking-widest">Đăng xuất hệ thống</span>
+          <span className="text-xs font-black uppercase tracking-widest">Đăng xuất</span>
         </button>
       </div>
     </aside>

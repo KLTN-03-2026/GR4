@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { getAllMovies, createMovie, updateMovie, deleteMovie } from '../service/movie_service';
+import { getAllMovies, createMovie, updateMovie, deleteMovie, uploadMovieImages } from '../service/movie_service';
 import { getAllGenres } from '../service/genre_service';
 import { getAllCountries } from '../service/country_service';
 
@@ -34,6 +34,10 @@ export function useMovies() {
     genre_ids: [],
     required_vip_level: 0
   });
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [backgroundFile, setBackgroundFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [backgroundPreview, setBackgroundPreview] = useState('');
 
   // Fetch initial data
   useEffect(() => {
@@ -98,6 +102,10 @@ export function useMovies() {
       genre_ids: [],
       required_vip_level: 0
     });
+    setAvatarFile(null);
+    setBackgroundFile(null);
+    setAvatarPreview('');
+    setBackgroundPreview('');
   };
 
   const handleFormChange = (field, value) => {
@@ -107,18 +115,83 @@ export function useMovies() {
     }));
   };
 
+  const handleFileChange = (field, file) => {
+    if (!file) return;
+
+    const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_UPLOAD_SIZE) {
+      setError('Kích thước ảnh quá lớn. Tối đa 10MB.');
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+
+    if (field === 'avatar') {
+      setAvatarFile(file);
+      setAvatarPreview(previewUrl);
+    }
+
+    if (field === 'background') {
+      setBackgroundFile(file);
+      setBackgroundPreview(previewUrl);
+    }
+  };
+
+  const uploadFilesIfNeeded = async () => {
+    if (!avatarFile && !backgroundFile) {
+      return {};
+    }
+
+    const uploaded = await uploadMovieImages({
+      avatar: avatarFile,
+      background: backgroundFile,
+    });
+
+    return uploaded;
+  };
+
   const handleAddMovie = async () => {
     try {
       setIsLoading(true);
-      const newMovie = await createMovie(formData);
+
+      const normalizedGenreIds = Array.isArray(formData.genre_ids)
+        ? formData.genre_ids
+            .map((id) => Number(id))
+            .filter((id) => Number.isInteger(id) && id > 0)
+        : [];
+
+      const normalizedCountryId = formData.country_id === '' || formData.country_id === null
+        ? null
+        : Number(formData.country_id);
+
+      if (!formData.title?.trim()) {
+        setError('Tiêu đề phim là bắt buộc');
+        return;
+      }
+
+      if (!normalizedCountryId || Number.isNaN(normalizedCountryId) || normalizedCountryId <= 0) {
+        setError('Quốc gia là bắt buộc');
+        return;
+      }
+
+      const uploadedFiles = await uploadFilesIfNeeded();
+      const payload = {
+        ...formData,
+        ...uploadedFiles,
+        country_id: normalizedCountryId,
+        genre_ids: normalizedGenreIds,
+        required_vip_level: Number(formData.required_vip_level) || 0,
+      };
+
+      const newMovie = await createMovie(payload);
       setMovies(prev => [...prev, newMovie]);
       setSuccessType('add');
       setIsAddModalOpen(false);
       resetFormData();
       setIsSuccessModalOpen(true);
     } catch (err) {
-      console.error('Error adding movie:', err);
-      setError(err.message);
+      console.error('Error adding movie:', err.response?.data || err.message);
+      setError(err.response?.data?.message || err.message);
     } finally {
       setIsLoading(false);
     }
@@ -138,16 +211,25 @@ export function useMovies() {
       genre_ids: movie.genre_ids || [],
       required_vip_level: movie.required_vip_level || 0
     });
+    setAvatarFile(null);
+    setBackgroundFile(null);
+    setAvatarPreview(movie.avatar_url || '');
+    setBackgroundPreview(movie.background_url || '');
     setIsEditModalOpen(true);
   };
 
   const handleUpdateMovie = async () => {
     try {
       setIsLoading(true);
-      await updateMovie(selectedMovie.id, formData);
+      const uploadedFiles = await uploadFilesIfNeeded();
+      const payload = {
+        ...formData,
+        ...uploadedFiles,
+      };
+      await updateMovie(selectedMovie.id, payload);
       setMovies(prev => prev.map(m => 
         m.id === selectedMovie.id 
-          ? { ...m, ...formData } 
+          ? { ...m, ...payload } 
           : m
       ));
       setSuccessType('update');
@@ -231,6 +313,7 @@ export function useMovies() {
     successType,
     formData,
     handleFormChange,
+    handleFileChange,
     handleAddMovie,
     handleEditClick,
     handleUpdateMovie,
@@ -241,5 +324,7 @@ export function useMovies() {
     openAddModal,
     closeEditModal,
     closeSuccessModal,
+    avatarPreview,
+    backgroundPreview,
   };
 }

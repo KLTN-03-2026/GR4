@@ -39,6 +39,7 @@ export default function MovieManagement() {
     successType,
     formData,
     handleFormChange,
+    handleFileChange,
     handleAddMovie,
     handleEditClick,
     handleUpdateMovie,
@@ -49,6 +50,8 @@ export default function MovieManagement() {
     openAddModal,
     closeEditModal,
     closeSuccessModal,
+    avatarPreview,
+    backgroundPreview,
     searchTerm,
     setSearchTerm,
     sortBy,
@@ -233,21 +236,61 @@ export default function MovieManagement() {
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Poster Phim (2:3)</label>
-                      <div className="aspect-[2/3] bg-surface-container-high rounded-3xl border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center gap-4 hover:border-primary-container/50 transition-all cursor-pointer group relative overflow-hidden">
-                        <div className="flex flex-col items-center gap-2 group-hover:scale-110 transition-transform">
-                          <Upload className="w-8 h-8 text-on-surface-variant" />
-                          <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Tải lên Poster</span>
-                        </div>
-                      </div>
+                      <label htmlFor="add-avatar-upload" className="aspect-[2/3] bg-surface-container-high rounded-3xl border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center gap-4 hover:border-primary-container/50 transition-all cursor-pointer group relative overflow-hidden">
+                        <input
+                          id="add-avatar-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileChange('avatar', file);
+                          }}
+                        />
+                        {avatarPreview || formData.avatar_url ? (
+                          <img
+                            src={avatarPreview || formData.avatar_url}
+                            alt="Poster preview"
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => (e.target.src = 'https://via.placeholder.com/300x450')}
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center gap-2 group-hover:scale-110 transition-transform">
+                            <Upload className="w-8 h-8 text-on-surface-variant" />
+                            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Tải lên Poster</span>
+                          </div>
+                        )}
+                      </label>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Ảnh bìa (16:9)</label>
-                      <div className="aspect-video bg-surface-container-high rounded-3xl border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center gap-4 hover:border-primary-container/50 transition-all cursor-pointer group relative overflow-hidden">
-                        <div className="flex flex-col items-center gap-2 group-hover:scale-110 transition-transform">
-                          <Upload className="w-8 h-8 text-on-surface-variant" />
-                          <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Tải lên Backdrop</span>
-                        </div>
-                      </div>
+                      <label htmlFor="add-background-upload" className="aspect-video bg-surface-container-high rounded-3xl border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center gap-4 hover:border-primary-container/50 transition-all cursor-pointer group relative overflow-hidden">
+                        <input
+                          id="add-background-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileChange('background', file);
+                          }}
+                        />
+                        {backgroundPreview || formData.background_url ? (
+                          <img
+                            src={backgroundPreview || formData.background_url}
+                            alt="Backdrop preview"
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => (e.target.src = 'https://via.placeholder.com/1280x720')}
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center gap-2 group-hover:scale-110 transition-transform">
+                            <Upload className="w-8 h-8 text-on-surface-variant" />
+                            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Tải lên Backdrop</span>
+                          </div>
+                        )}
+                      </label>
                     </div>
                   </div>
 
@@ -404,33 +447,53 @@ export default function MovieManagement() {
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Poster Phim (2:3)</label>
-                      <div className="aspect-[2/3] bg-surface-container-high rounded-3xl border-2 border-primary-container/30 overflow-hidden group relative cursor-pointer">
+                      <label htmlFor="edit-avatar-upload" className="aspect-[2/3] bg-surface-container-high rounded-3xl border-2 border-primary-container/30 overflow-hidden group relative cursor-pointer">
+                        <input
+                          id="edit-avatar-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileChange('avatar', file);
+                          }}
+                        />
                         <img 
                           alt="Poster" 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                          src={formData.avatar_url || selectedMovie?.avatar_url || 'https://via.placeholder.com/300x450'} 
+                          src={avatarPreview || formData.avatar_url || selectedMovie?.avatar_url || 'https://via.placeholder.com/300x450'} 
                           referrerPolicy="no-referrer"
                           onError={(e) => e.target.src = 'https://via.placeholder.com/300x450'}
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <Upload className="w-10 h-10 text-white" />
                         </div>
-                      </div>
+                      </label>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Ảnh bìa (16:9)</label>
-                      <div className="aspect-video bg-surface-container-high rounded-3xl border-2 border-outline-variant/30 overflow-hidden group relative cursor-pointer">
+                      <label htmlFor="edit-background-upload" className="aspect-video bg-surface-container-high rounded-3xl border-2 border-outline-variant/30 overflow-hidden group relative cursor-pointer">
+                        <input
+                          id="edit-background-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileChange('background', file);
+                          }}
+                        />
                         <img 
                           alt="Backdrop" 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                          src={formData.background_url || selectedMovie?.background_url || 'https://via.placeholder.com/1280x720'} 
+                          src={backgroundPreview || formData.background_url || selectedMovie?.background_url || 'https://via.placeholder.com/1280x720'} 
                           referrerPolicy="no-referrer"
                           onError={(e) => e.target.src = 'https://via.placeholder.com/1280x720'}
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <Upload className="w-10 h-10 text-white" />
                         </div>
-                      </div>
+                      </label>
                     </div>
                   </div>
 

@@ -17,79 +17,79 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (loading) return;
+    if (loading) return;
 
-  setError('');
-  setLoading(true);
+    setError('');
+    setLoading(true);
 
-  // ✅ validate input
-  if (!username || !email || !password || !confirm) {
-    setError('Vui lòng nhập đầy đủ thông tin');
-    setLoading(false);
-    return;
-  }
+    // ✅ validate input
+    if (!username || !email || !password || !confirm) {
+      setError('Vui lòng nhập đầy đủ thông tin');
+      setLoading(false);
+      return;
+    }
 
-  // ✅ normalize data
-  const normalizedEmail = email.trim().toLowerCase();
-  const trimmedUsername = username.trim();
+    // ✅ normalize data
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedUsername = username.trim();
 
-  // ✅ validate password match
-  if (password !== confirm) {
-    setError('Mật khẩu không khớp');
-    setLoading(false);
-    return;
-  }
+    // ✅ validate password match
+    if (password !== confirm) {
+      setError('Mật khẩu không khớp');
+      setLoading(false);
+      return;
+    }
 
-  // ✅ validate password length (backend chưa check)
-  if (password.length < 6) {
-    setError('Mật khẩu phải có ít nhất 6 ký tự');
-    setLoading(false);
-    return;
-  }
+    // ✅ validate password length (backend chưa check)
+    if (password.length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự');
+      setLoading(false);
+      return;
+    }
 
-  // ✅ validate username
-  if (trimmedUsername.length < 3) {
-    setError('Tên người dùng tối thiểu 3 ký tự');
-    setLoading(false);
-    return;
-  }
+    // ✅ validate username
+    if (trimmedUsername.length < 3) {
+      setError('Tên người dùng tối thiểu 3 ký tự');
+      setLoading(false);
+      return;
+    }
 
-  // ✅ check agree
-  if (!agree) {
-    setError('Bạn cần đồng ý với các điều khoản');
-    setLoading(false);
-    return;
-  }
+    // ✅ check agree
+    if (!agree) {
+      setError('Bạn cần đồng ý với các điều khoản');
+      setLoading(false);
+      return;
+    }
 
-  try {
-    const res = await axios.post(
-      'http://localhost:3000/api/users/register',
-      {
-        username: trimmedUsername,
-        email: normalizedEmail,
-        password
-      }
-    );
+    try {
+      const res = await axios.post(
+        'http://localhost:3000/api/users/register',
+        {
+          username: trimmedUsername,
+          email: normalizedEmail,
+          password
+        }
+      );
 
-    // ✅ optional: show success message (nếu bạn có UI)
-    // setSuccess('Đăng ký thành công');
+      // ✅ optional: show success message (nếu bạn có UI)
+      // setSuccess('Đăng ký thành công');
 
-    // ✅ redirect về login
-    navigate('/login');
+      // ✅ redirect về login
+      navigate('/login');
 
-  } catch (err) {
-    console.error(err);
+    } catch (err) {
+      console.error(err);
 
-    setError(
-      err.response?.data?.message ||
-      'Đăng ký thất bại. Vui lòng thử lại sau.'
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+      setError(
+        err.response?.data?.message ||
+        'Đăng ký thất bại. Vui lòng thử lại sau.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden bg-black">
@@ -117,16 +117,18 @@ const Register = () => {
         <div className="glass-dark p-10 md:p-14 rounded-[3.5rem] shadow-[0_48px_96px_rgba(0,0,0,0.8)] border border-white/5 relative overflow-hidden group">
           {/* Decorative Glow */}
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/20 blur-[80px] -z-10 group-hover:bg-primary/30 transition-colors duration-700"></div>
-          
+
           <div className="mb-12 text-center space-y-4">
-             <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto border border-primary/20 shadow-2xl"
-            >
-              <User className="w-10 h-10 text-primary" />
-            </motion.div>
+            <Link to="/">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto border border-primary/20 shadow-2xl"
+              >
+                <Sparkles className="w-10 h-10 text-primary animate-pulse" />
+              </motion.div>
+            </Link>
             <div className="space-y-2">
               <h2 className="text-4xl font-black text-white uppercase tracking-tighter text-glow italic">Gia nhập Cinema+</h2>
               <p className="text-on-surface-variant/60 text-[10px] font-black uppercase tracking-[0.3em]">Bắt đầu hành trình điện ảnh của bạn</p>
@@ -135,7 +137,7 @@ const Register = () => {
 
           <AnimatePresence mode="wait">
             {error && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
@@ -152,7 +154,7 @@ const Register = () => {
             <div className="space-y-3">
               <label className="block text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-2">Họ và tên thành viên</label>
               <div className="relative group/input">
-                <input 
+                <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -167,7 +169,7 @@ const Register = () => {
             <div className="space-y-3">
               <label className="block text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-2">Địa chỉ Email</label>
               <div className="relative group/input">
-                <input 
+                <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -183,7 +185,7 @@ const Register = () => {
               <div className="space-y-3">
                 <label className="block text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-2">Mật mã</label>
                 <div className="relative group/input">
-                  <input 
+                  <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -197,7 +199,7 @@ const Register = () => {
               <div className="space-y-3">
                 <label className="block text-[10px] font-black tracking-[0.3em] text-on-surface-variant uppercase ml-2">Xác nhận</label>
                 <div className="relative group/input">
-                  <input 
+                  <input
                     type="password"
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
@@ -212,7 +214,7 @@ const Register = () => {
             {/* AGREEMENT */}
             <div className="flex items-start space-x-4 pt-4 px-2">
               <div className="relative flex items-center h-6">
-                <input 
+                <input
                   type="checkbox"
                   checked={agree}
                   onChange={(e) => setAgree(e.target.checked)}
@@ -227,7 +229,7 @@ const Register = () => {
             </div>
 
             {/* BUTTON */}
-            <button 
+            <button
               type="submit"
               disabled={loading}
               className="btn-primary w-full py-5 text-xs uppercase tracking-[0.3em] shadow-[0_24px_48px_rgba(229,9,20,0.4)] relative group hover:scale-[1.02] active:scale-95 mt-4"
@@ -240,13 +242,13 @@ const Register = () => {
           </form>
 
           <div className="mt-12 flex items-center gap-4">
-             <div className="h-px flex-grow bg-white/5"></div>
-             <Sparkles className="w-4 h-4 text-white/10" />
-             <div className="h-px flex-grow bg-white/5"></div>
+            <div className="h-px flex-grow bg-white/5"></div>
+            <Sparkles className="w-4 h-4 text-white/10" />
+            <div className="h-px flex-grow bg-white/5"></div>
           </div>
         </div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}

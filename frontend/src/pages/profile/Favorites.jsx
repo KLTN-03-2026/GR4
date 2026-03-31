@@ -1,20 +1,67 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Star, X, Play, Heart, Film } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { getFavorites, removeFavorite as removeFavoriteAPI } from '../../service/user_service';
 
 const Favorites = () => {
-  // Mock data for demonstration, in a real app this would come from a store/API
-  const [favorites, setFavorites] = React.useState([
-    { id: 1, title: 'Interstellar', rating: 8.9, year: 2014, img: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&q=80&w=400' },
-    { id: 2, title: 'The Dark Knight', rating: 9.0, year: 2008, img: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&q=80&w=400' },
-    { id: 3, title: 'Inception', rating: 8.8, year: 2010, img: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=400' },
-    { id: 4, title: 'Arrival', rating: 7.9, year: 2016, img: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=400' },
-    { id: 5, title: 'Blade Runner 2049', rating: 8.0, year: 2017, img: 'https://images.unsplash.com/photo-1485125639709-a60c3a500bf1?auto=format&fit=crop&q=80&w=400' },
-  ]);
+  const { user } = useAuth();
+  const location = useLocation();
+  const [favorites, setFavorites] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
-  const removeFavorite = (id) => {
-    setFavorites(favorites.filter(f => f.id !== id));
+  const fetchFavorites = async () => {
+    if (!user) {
+      setFavorites([]);
+      setIsLoading(false);
+      setFetchError(null);
+      return;
+    }
+
+    setIsLoading(true);
+    setFetchError(null);
+
+    try {
+      const response = await getFavorites();
+      const data = Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.data)
+        ? response.data.data
+        : [];
+      setFavorites(data);
+    } catch (error) {
+      console.error('Load favorites failed', error);
+      setFavorites([]);
+      setFetchError('Không thể tải danh sách yêu thích. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!location.pathname.includes('/favorites')) return;
+    fetchFavorites();
+  }, [user, location.pathname]);
+
+  useEffect(() => {
+    const handleFavoritesUpdated = () => {
+      if (!location.pathname.includes('/favorites')) return;
+      fetchFavorites();
+    };
+
+    window.addEventListener('favoritesUpdated', handleFavoritesUpdated);
+    return () => window.removeEventListener('favoritesUpdated', handleFavoritesUpdated);
+  }, [location.pathname]);
+
+  const removeFavorite = async (id) => {
+    try {
+      await removeFavoriteAPI(id);
+      await fetchFavorites();
+    } catch (error) {
+      console.error('Remove favorite failed', error);
+    }
   };
 
   return (
@@ -36,7 +83,34 @@ const Favorites = () => {
       </header>
 
       <AnimatePresence mode="popLayout">
-        {favorites.length > 0 ? (
+        {isLoading ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="min-h-[60vh] flex items-center justify-center"
+          >
+            <div className="flex flex-col items-center gap-4 text-center text-on-surface-variant">
+              <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+              <p className="text-sm font-black uppercase tracking-[0.2em]">Đang tải danh sách yêu thích...</p>
+            </div>
+          </motion.div>
+        ) : fetchError ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="min-h-[60vh] flex items-center justify-center"
+          >
+            <div className="max-w-md p-8 rounded-3xl bg-white/5 border border-red-500/20 text-center">
+              <p className="text-sm font-black uppercase tracking-[0.2em] text-red-400 mb-4">{fetchError}</p>
+              <button
+                onClick={fetchFavorites}
+                className="btn-primary px-8 py-3 text-[10px] font-black uppercase tracking-[0.3em]"
+              >
+                Thử lại
+              </button>
+            </div>
+          </motion.div>
+        ) : favorites.length > 0 ? (
           <motion.div 
             layout
             className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8"
@@ -49,20 +123,21 @@ const Favorites = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8, filter: 'blur(10px)' }}
                 whileHover={{ y: -10 }}
-                className="relative group aspect-[2/3] rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/5 bg-surface"
+                className="relative group aspect-[2/3] rounded-2xl overflow-hidden shadow-xl border border-white/5 bg-surface-container-low"
               >
                 <img
-                  src={movie.img}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[30%] group-hover:grayscale-0"
+                  src={movie.avatar_url || movie.background_url || movie.img || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=400'}
+                  className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110 brightness-105"
                   alt={movie.title}
                   referrerPolicy="no-referrer"
                 />
                 
                 {/* Premium Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-8">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-8">
                    <motion.div 
                     initial={{ y: 20, opacity: 0 }}
                     whileHover={{ y: 0, opacity: 1 }}
+                      transition={{ duration: 0.3 }}
                     className="space-y-4"
                    >
                       <div className="space-y-1">
@@ -70,9 +145,9 @@ const Favorites = () => {
                         <div className="flex items-center gap-3">
                            <div className="flex items-center gap-1">
                               <Star className="w-3 h-3 text-primary fill-primary" />
-                              <span className="text-[10px] font-black text-white">{movie.rating}</span>
+                              <span className="text-[10px] font-black text-white">{movie.rating || '—'}</span>
                            </div>
-                           <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{movie.year}</span>
+                           <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{movie.release_date ? new Date(movie.release_date).getFullYear() : movie.year || 'N/A'}</span>
                         </div>
                       </div>
                       
