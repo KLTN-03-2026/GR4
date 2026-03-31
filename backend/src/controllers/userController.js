@@ -1,6 +1,7 @@
 const db = require("../db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { parsePagination, buildPagination } = require("../utils/pagination");
 
 /* ================= GET (user) ================= */
 exports.getProfile = (req, res) => {
@@ -184,7 +185,7 @@ exports.updateUserforUser = (req, res) => {
 };
 
 /* ================= GET ALL USERS (ADMIN) ================= */
-exports.getAllUsers = (req, res) => {
+exports.getAllUsers = async (req, res) => {
 
   // Kiểm tra quyền admin
   if (req.user.role_id !== 1) {
@@ -193,24 +194,36 @@ exports.getAllUsers = (req, res) => {
     });
   }
 
-  db.query(
-    `SELECT 
-      users.id,
-      users.username,
-      users.email,
-      roles.name AS role_name,
-      users.is_vip,
-      users.vip_expired_at
-   FROM users
-   JOIN roles ON users.role_id = roles.id`,
-    (err, results) => {
-      if (err) {
-        return res.status(500).json(err);
-      }
+  const { page, limit, offset } = parsePagination(req);
 
-      res.json(results);
-    }
-  );
+  try {
+    const [countRows] = await db.promise().query(
+      `SELECT COUNT(*) AS total FROM users`
+    );
+    const total = countRows[0]?.total || 0;
+
+    const [results] = await db.promise().query(
+      `SELECT 
+        users.id,
+        users.username,
+        users.email,
+        roles.name AS role_name,
+        users.is_vip,
+        users.vip_expired_at
+       FROM users
+       JOIN roles ON users.role_id = roles.id
+       ORDER BY users.id ASC
+       LIMIT ? OFFSET ?`,
+      [limit, offset]
+    );
+
+    res.json({
+      data: results,
+      pagination: buildPagination(page, limit, total),
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
 };
 
 /* ================= GET USER BY ID (ADMIN) ================= */

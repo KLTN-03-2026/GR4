@@ -326,7 +326,7 @@ const Watch = () => {
                     <div className="flex items-center gap-4 mt-3">
                       <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-lg">
                         <Star className="w-2.5 h-2.5 text-primary fill-primary" />
-                        <span className="text-[9px] font-black text-white/80">{rec.rating || '8.5'}</span>
+                        <span className="text-[9px] font-black text-white/80">{rec.rating ?? '0'}</span>
                       </div>
                       <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">{rec.year}</span>
                     </div>

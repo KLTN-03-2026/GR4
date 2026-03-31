@@ -1,39 +1,136 @@
-import { useState, useMemo } from 'react';
-import { initialComments } from '../lib/mockData';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  createComment,
+  deleteComment,
+  getAllComments,
+  getCommentsByMovie,
+} from '../service/comment_service';
 
-export function useComments() {
-  const [comments, setComments] = useState(initialComments);
+const formatCreatedAt = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  return date.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const normalizeComments = (rawComments) =>
+  rawComments.map((comment) => ({
+    id: comment.id,
+    user: comment.username || comment.user || 'Người dùng',
+    movie: comment.movie || comment.title || 'Phim',
+    avatar:
+      comment.avatar || comment.avatar_url ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.username || comment.user || 'User')}`,
+    content: comment.content || comment.comment || '',
+    rating: comment.rating || 0,
+    createdAt: comment.createdAt || comment.create_at || '',
+    time: formatCreatedAt(comment.createdAt || comment.create_at),
+    userId: comment.userId || comment.user_id,
+    movieId: comment.movieId || comment.movie_id,
+  }));
+
+export function useComments(movieId) {
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredComments = useMemo(() => {
-    if (!searchTerm) return comments;
-    const term = searchTerm.toLowerCase();
-    return comments.filter(c => 
-      c.user.toLowerCase().includes(term) || 
-      c.movie.toLowerCase().includes(term) ||
-      c.content.toLowerCase().includes(term)
-    );
-  }, [comments, searchTerm]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleteSuccessModalOpen, setIsDeleteSuccessModalOpen] = useState(false);
   const [selectedComment, setSelectedComment] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchComments = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = movieId
+        ? await getCommentsByMovie(movieId)
+        : await getAllComments();
+
+      const data = response.data || {};
+      const rawComments = movieId ? data.comments || [] : data.comments || [];
+      setComments(normalizeComments(rawComments));
+    } catch (err) {
+      console.error('Fetch comments failed', err);
+      setError('Không thể tải bình luận. Vui lòng thử lại.');
+      setComments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchComments();
+  }, [movieId]);
+
+  const addComment = async () => {
+    if (!movieId) return;
+    if (!newComment.trim()) {
+      setError('Nội dung bình luận không được để trống');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      await createComment({ movieId, content: newComment.trim() });
+      setNewComment('');
+      await fetchComments();
+    } catch (err) {
+      console.error('Add comment failed', err);
+      setError('Gửi bình luận thất bại. Vui lòng thử lại');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDeleteClick = (comment) => {
     setSelectedComment(comment);
     setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    setComments(prev => prev.filter(c => c.id !== selectedComment.id));
-    setIsDeleteModalOpen(false);
-    setIsDeleteSuccessModalOpen(true);
+  const handleConfirmDelete = async () => {
+    if (!selectedComment) return;
+    setLoading(true);
+
+    try {
+      await deleteComment(selectedComment.id);
+      setComments((prev) => prev.filter((c) => c.id !== selectedComment.id));
+      setIsDeleteModalOpen(false);
+      setIsDeleteSuccessModalOpen(true);
+    } catch (err) {
+      console.error('Delete comment failed', err);
+      setError('Xoá bình luận thất bại. Vui lòng thử lại');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const closeDeleteModal = () => setIsDeleteModalOpen(false);
   const closeDeleteSuccessModal = () => setIsDeleteSuccessModalOpen(false);
 
+  const filteredComments = useMemo(() => {
+    if (!searchTerm) return comments;
+    const term = searchTerm.toLowerCase();
+    return comments.filter(
+      (c) =>
+        c.user.toLowerCase().includes(term) ||
+        c.movie.toLowerCase().includes(term) ||
+        c.content.toLowerCase().includes(term)
+    );
+  }, [comments, searchTerm]);
+
   return {
     comments: filteredComments,
+    newComment,
+    setNewComment,
     searchTerm,
     setSearchTerm,
     isDeleteModalOpen,
@@ -43,5 +140,9 @@ export function useComments() {
     handleConfirmDelete,
     closeDeleteModal,
     closeDeleteSuccessModal,
+    addComment,
+    fetchComments,
+    loading,
+    error,
   };
 }

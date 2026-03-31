@@ -1,24 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import { 
-  Play, Star, ArrowLeft, Heart, MessageSquare, Send, Share2, Clock, Plus, Info, X
+  Play, Star, ArrowLeft, Heart, MessageSquare, Share2, Clock, Plus, Info, X
 } from 'lucide-react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { useMovieDetail } from '../hooks/useMovieDetail';
 import { useComments } from '../hooks/useComments';
+import { useRating } from '../hooks/useRating';
 import { isVipActive } from '../utils/vip';
 import { useAuth } from '../hooks/useAuth';
 import { getFavorites, addFavorite, removeFavorite } from '../service/user_service';
 import MovieCard from '../components/shared/MovieCard';
+import CommentSection from '../components/shared/CommentSection';
+import CommentForm from '../components/shared/CommentForm';
+import StarRating from '../components/shared/StarRating';
 
 const MovieDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showTrailerModal, setShowTrailerModal] = useState(false);
 
-  const { movie, recommendations, isLoading } = useMovieDetail(id);
-  const { comments, newComment, setNewComment, addComment } = useComments();
+  const { movie, recommendations, isLoading, error: movieError } = useMovieDetail(id);
+  const {
+    comments,
+    newComment,
+    setNewComment,
+    addComment,
+    loading: commentLoading,
+    error: commentError,
+  } = useComments(id);
   const { user } = useAuth();
+  const {
+    userRating,
+    averageRating,
+    ratingCount,
+    loading: ratingLoading,
+    error: ratingError,
+    updateRating,
+  } = useRating(id);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
 
@@ -70,12 +89,31 @@ const MovieDetail = () => {
     window.scrollTo(0, 0);
   }, [id]);
 
-  if (isLoading || !movie) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="relative w-16 h-16">
           <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
           <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!movie) {
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center p-6">
+        <div className="max-w-xl w-full glass-dark rounded-3xl border border-white/10 p-12 text-center">
+          <h2 className="text-3xl font-black text-white mb-4">Phim không tồn tại</h2>
+          <p className="text-sm text-on-surface-variant mb-8">
+            {movieError || 'Xin lỗi, phim bạn tìm kiếm không có trong hệ thống hoặc đã bị xóa.'}
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="btn-primary px-10 py-4 uppercase tracking-widest"
+          >
+            Quay về trang chủ
+          </button>
         </div>
       </div>
     );
@@ -139,13 +177,13 @@ const MovieDetail = () => {
                 </span>
                 <div className="flex items-center gap-1.5 glass px-3 py-1 rounded-lg">
                   <Star className="w-3.5 h-3.5 text-primary fill-primary" />
-                  <span className="text-sm font-black text-white tracking-tighter">{movie.rating || '8.9'}</span>
+                  <span className="text-sm font-black text-white tracking-tighter">{movie.rating ?? '0.0'}</span>
                 </div>
               </div>
               <h1 className="text-5xl lg:text-7xl font-black font-manrope tracking-tighter text-white uppercase leading-[0.9] text-glow">
                 {movie.title}
               </h1>
-              <div className="flex items-center gap-6 text-sm font-bold text-on-surface-variant uppercase tracking-widest">
+              <div className="flex flex-wrap items-center gap-6 text-sm font-bold text-on-surface-variant uppercase tracking-widest">
                 <span>{movie.year}</span>
                 <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
                 <span>{movie.genre || 'Hành động, Viễn tưởng'}</span>
@@ -153,6 +191,10 @@ const MovieDetail = () => {
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4" />
                   <span>2h 15m</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Star className="w-4 h-4 text-primary fill-primary" />
+                  <span>{(averageRating ?? movie.average_rating ?? movie.rating ?? 0).toFixed(1)}</span>
                 </div>
               </div>
             </motion.div>
@@ -212,35 +254,13 @@ const MovieDetail = () => {
                 </h3>
               </div>
 
-              {/* Comment Input */}
               {user ? (
-                <div className="flex gap-6 items-start">
-                  <div className="w-14 h-14 rounded-2xl bg-surface-container-high overflow-hidden border border-white/5 shadow-xl shrink-0">
-                    <img src={user?.avatar || "https://ui-avatars.com/api/?name=User&background=random"} className="w-full h-full object-cover" alt={user?.name || "User"} />
-                  </div>
-                  <div className="flex-grow space-y-4">
-                    <div className="relative group">
-                      <textarea 
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Chia sẻ cảm nhận của bạn về phim..."
-                        className="w-full bg-surface-container-low border border-white/5 rounded-2xl p-5 text-base focus:ring-2 focus:ring-primary/20 min-h-[120px] resize-none outline-none placeholder:text-on-surface-variant/40 transition-all font-medium"
-                      />
-                      <div className="absolute bottom-4 right-4 text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest pointer-events-none group-focus-within:opacity-0 transition-opacity">
-                        Markdown Supported
-                      </div>
-                    </div>
-                    <div className="flex justify-end">
-                      <button 
-                        onClick={addComment}
-                        className="btn-primary py-3 px-8 text-xs uppercase tracking-[0.2em]"
-                      >
-                        <Send className="w-4 h-4" />
-                        Gửi bình luận
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <CommentForm
+                  value={newComment}
+                  setValue={setNewComment}
+                  onSubmit={addComment}
+                  loading={commentLoading}
+                />
               ) : (
                 <Link to="/login" className="flex items-center gap-4 p-6 glass-dark rounded-3xl border border-white/5 hover:border-primary/30 transition-all group">
                   <div className="w-14 h-14 rounded-2xl bg-surface-container-high flex items-center justify-center border border-white/5">
@@ -253,39 +273,44 @@ const MovieDetail = () => {
                 </Link>
               )}
 
-              {/* Comments List */}
-              <div className="space-y-8 pl-20 relative">
-                <div className="absolute left-7 top-0 bottom-0 w-px bg-white/5"></div>
-                {comments.map((c, i) => (
-                  <motion.div 
-                    key={c.id || i}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="relative"
-                  >
-                    <div className="absolute -left-[53px] top-2 w-10 h-10 rounded-xl overflow-hidden border border-white/10 shadow-lg">
-                      <img src={c.avatar} className="w-full h-full object-cover" alt={c.user} />
-                    </div>
-                    <div className="glass-dark p-6 rounded-3xl border border-white/5 shadow-2xl space-y-3">
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-black text-sm text-white racking-tight">{c.user}</h4>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40">{c.time || '2 ngày trước'}</span>
-                      </div>
-                      <p className="text-sm font-medium text-on-surface-variant leading-relaxed">
-                        {c.content}
-                      </p>
-                      <div className="flex items-center gap-6 pt-2">
-                        <button className="flex items-center gap-2 group text-on-surface-variant hover:text-primary transition-colors">
-                          <Heart className="w-3.5 h-3.5 group-hover:fill-primary transition-all" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">{c.likes || 0}</span>
-                        </button>
-                        <button className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 hover:text-white transition-colors">Phản hồi</button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+              {commentError && (
+                <div className="p-4 rounded-3xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm">
+                  {commentError}
+                </div>
+              )}
+
+              {ratingError && (
+                <div className="p-4 rounded-3xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm">
+                  {ratingError}
+                </div>
+              )}
+
+              <div className="glass p-6 rounded-3xl border border-white/10 mb-10">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <p className="text-sm uppercase tracking-[0.3em] text-primary font-black mb-2">Đánh giá của bạn</p>
+                    <p className="text-xs text-on-surface-variant">Chọn số sao để đánh giá phim này</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <StarRating value={userRating || 0} editable onChange={async (value) => {
+                      if (!user) {
+                        navigate('/login');
+                        return;
+                      }
+                      await updateRating(value);
+                    }} />
+                    <span className="text-sm font-black text-white">
+                      {userRating ? `Bạn đã đánh giá ${userRating} sao` : 'Chưa đánh giá'}
+                    </span>
+                  </div>
+                </div>
               </div>
+
+              <CommentSection
+                comments={comments}
+                averageRating={averageRating ?? movie.average_rating ?? movie.rating ?? 0}
+                ratingCount={ratingCount}
+              />
             </section>
           </div>
 

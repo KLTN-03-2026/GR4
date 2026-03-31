@@ -1,15 +1,18 @@
 const db = require("../db");
+const { parsePagination, buildPagination } = require("../utils/pagination");
 
 
 // ================= ADMIN: GET ALL MOVIES =================
-exports.getAllMovies = (req, res) => {
-
+exports.getAllMovies = async (req, res) => {
   if (!req.user || req.user.role_id !== 1) {
     return res.status(403).json({
       message: "Chỉ admin mới có quyền xem"
     });
   }
 
+  const { page, limit, offset } = parsePagination(req);
+
+  const countSql = `SELECT COUNT(*) AS total FROM movies`;
   const sql = `
     SELECT 
       m.id,
@@ -32,50 +35,66 @@ exports.getAllMovies = (req, res) => {
     LEFT JOIN genres g ON mg.genre_id = g.id
     GROUP BY m.id
     ORDER BY m.created_at DESC
+    LIMIT ? OFFSET ?
   `;
 
-  db.query(sql, (err, result) => {
-    if (err) return res.status(500).json(err);
-    
-    // Transform genre_ids string to array of numbers
+  try {
+    const [countRows] = await db.promise().query(countSql);
+    const [result] = await db.promise().query(sql, [limit, offset]);
     const transformedResult = result.map(movie => ({
       ...movie,
       genre_ids: movie.genre_ids 
         ? movie.genre_ids.split(',').map(id => parseInt(id))
         : []
     }));
-    
-    res.json(transformedResult);
-  });
+
+    res.json({
+      data: transformedResult,
+      pagination: buildPagination(page, limit, countRows[0]?.total || 0),
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
 };
 
 // ================= PUBLIC: GET ALL MOVIES (NO AUTH) =================
-exports.getPublicMovies = (req, res) => {
+exports.getPublicMovies = async (req, res) => {
+  const { page, limit, offset } = parsePagination(req);
 
-  const sql = `
-    SELECT 
-      m.id,
-      m.title,
-      m.description,
-      m.release_date,
-      m.avatar_url,
-      m.background_url,
-      m.trailer_url,
-      c.name AS country,
-      GROUP_CONCAT(g.name) AS genres,
-      m.required_vip_level
-    FROM movies m
-    LEFT JOIN countries c ON m.country_id = c.id
-    LEFT JOIN movie_genres mg ON m.id = mg.movie_id
-    LEFT JOIN genres g ON mg.genre_id = g.id
-    GROUP BY m.id
-    ORDER BY m.release_date DESC
-  `;
+  try {
+    const [countRows] = await db.promise().query(
+      `SELECT COUNT(*) AS total FROM movies`
+    );
 
-  db.query(sql, (err, result) => {
-    if (err) return res.status(500).json(err);
-    res.json(result);
-  });
+    const sql = `
+      SELECT 
+        m.id,
+        m.title,
+        m.description,
+        m.release_date,
+        m.avatar_url,
+        m.background_url,
+        m.trailer_url,
+        c.name AS country,
+        GROUP_CONCAT(g.name) AS genres,
+        m.required_vip_level
+      FROM movies m
+      LEFT JOIN countries c ON m.country_id = c.id
+      LEFT JOIN movie_genres mg ON m.id = mg.movie_id
+      LEFT JOIN genres g ON mg.genre_id = g.id
+      GROUP BY m.id
+      ORDER BY m.release_date DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const [result] = await db.promise().query(sql, [limit, offset]);
+    res.json({
+      data: result,
+      pagination: buildPagination(page, limit, countRows[0]?.total || 0),
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
 };
 
 // ================= ADMIN: CREATE MOVIE =================
@@ -297,12 +316,15 @@ exports.getMovieById = (req, res) => {
       c.name AS country,
       GROUP_CONCAT(g.name) AS genres,
       COUNT(DISTINCT f.user_id) AS likes,
+      IFNULL(ROUND(AVG(rt.value), 1), 0) AS average_rating,
+      COUNT(DISTINCT rt.id) AS review_count,
       m.required_vip_level
     FROM movies m
     LEFT JOIN countries c ON m.country_id = c.id
     LEFT JOIN movie_genres mg ON m.id = mg.movie_id
     LEFT JOIN genres g ON mg.genre_id = g.id
     LEFT JOIN favorites f ON m.id = f.movie_id
+    LEFT JOIN ratings rt ON m.id = rt.movie_id
     WHERE m.id = ?
     GROUP BY m.id
   `;
@@ -322,96 +344,135 @@ exports.getMovieById = (req, res) => {
 };
 
 // ================= USER: SEARCH MOVIE =================
-exports.searchMovies = (req, res) => {
-
+exports.searchMovies = async (req, res) => {
   const keyword = req.query.keyword || "";
-
-  const sql = `
-    SELECT
-      m.id,
-      m.title,
-      m.avatar_url,
-      m.release_date,
-      c.name AS country,
-      GROUP_CONCAT(DISTINCT g.name) AS genres
-    FROM movies m
-    LEFT JOIN countries c ON m.country_id = c.id
-    LEFT JOIN movie_genres mg ON m.id = mg.movie_id
-    LEFT JOIN genres g ON mg.genre_id = g.id
-    WHERE m.title COLLATE utf8mb4_unicode_ci LIKE ?
-      OR m.description COLLATE utf8mb4_unicode_ci LIKE ?
-      OR g.name COLLATE utf8mb4_unicode_ci LIKE ?
-    GROUP BY m.id
-  `;
-
+  const { page, limit, offset } = parsePagination(req);
   const searchPattern = `%${keyword}%`;
-  db.query(sql, [searchPattern, searchPattern, searchPattern], (err, result) => {
-    if (err) return res.status(500).json(err);
-    res.json(result);
-  });
+
+  try {
+    const [countRows] = await db.promise().query(
+      `
+        SELECT COUNT(DISTINCT m.id) AS total
+        FROM movies m
+        LEFT JOIN movie_genres mg ON m.id = mg.movie_id
+        LEFT JOIN genres g ON mg.genre_id = g.id
+        WHERE m.title COLLATE utf8mb4_unicode_ci LIKE ?
+          OR m.description COLLATE utf8mb4_unicode_ci LIKE ?
+          OR g.name COLLATE utf8mb4_unicode_ci LIKE ?
+      `,
+      [searchPattern, searchPattern, searchPattern]
+    );
+
+    const sql = `
+      SELECT
+        m.id,
+        m.title,
+        m.avatar_url,
+        m.release_date,
+        c.name AS country,
+        GROUP_CONCAT(DISTINCT g.name) AS genres
+      FROM movies m
+      LEFT JOIN countries c ON m.country_id = c.id
+      LEFT JOIN movie_genres mg ON m.id = mg.movie_id
+      LEFT JOIN genres g ON mg.genre_id = g.id
+      WHERE m.title COLLATE utf8mb4_unicode_ci LIKE ?
+        OR m.description COLLATE utf8mb4_unicode_ci LIKE ?
+        OR g.name COLLATE utf8mb4_unicode_ci LIKE ?
+      GROUP BY m.id
+      ORDER BY m.release_date DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    const [result] = await db.promise().query(sql, [searchPattern, searchPattern, searchPattern, limit, offset]);
+
+    res.json({
+      data: result,
+      pagination: buildPagination(page, limit, countRows[0]?.total || 0),
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
 };
 
 // ================= USER: FILTER BY GENRE =================
-exports.getMoviesByGenre = (req, res) => {
-
+exports.getMoviesByGenre = async (req, res) => {
   const { genre_id } = req.params;
+  const { page, limit, offset } = parsePagination(req);
 
-  const sql = `
-    SELECT
-      m.id,
-      m.title,
-      m.avatar_url,
-      m.release_date
-    FROM movies m
-    JOIN movie_genres mg ON m.id = mg.movie_id
-    WHERE mg.genre_id = ?
-  `;
+  try {
+    const [countRows] = await db.promise().query(
+      `
+        SELECT COUNT(*) AS total
+        FROM movie_genres mg
+        WHERE mg.genre_id = ?
+      `,
+      [genre_id]
+    );
 
-  db.query(sql, [genre_id], (err, result) => {
+    const sql = `
+      SELECT
+        m.id,
+        m.title,
+        m.avatar_url,
+        m.release_date
+      FROM movies m
+      JOIN movie_genres mg ON m.id = mg.movie_id
+      WHERE mg.genre_id = ?
+      ORDER BY m.release_date DESC
+      LIMIT ? OFFSET ?
+    `;
 
-    if (err) return res.status(500).json(err);
+    const [result] = await db.promise().query(sql, [genre_id, limit, offset]);
 
-    res.json(result);
-  });
+    res.json({
+      data: result,
+      pagination: buildPagination(page, limit, countRows[0]?.total || 0),
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
 };
 
 // ================= USER: FILTER BY COUNTRY =================
-exports.getMoviesByCountry = (req, res) => {
-
+exports.getMoviesByCountry = async (req, res) => {
   const { country_id } = req.params;
+  const { page, limit, offset } = parsePagination(req);
 
-  const sql = `
-    SELECT
-      id,
-      title,
-      avatar_url,
-      release_date
-    FROM movies
-    WHERE country_id = ?
-  `;
+  try {
+    const [countRows] = await db.promise().query(
+      `SELECT COUNT(*) AS total FROM movies WHERE country_id = ?`,
+      [country_id]
+    );
 
-  db.query(sql, [country_id], (err, result) => {
+    const sql = `
+      SELECT
+        id,
+        title,
+        avatar_url,
+        release_date
+      FROM movies
+      WHERE country_id = ?
+      ORDER BY release_date DESC
+      LIMIT ? OFFSET ?
+    `;
 
-    if (err) return res.status(500).json(err);
+    const [result] = await db.promise().query(sql, [country_id, limit, offset]);
 
-    res.json(result);
-  });
+    res.json({
+      data: result,
+      pagination: buildPagination(page, limit, countRows[0]?.total || 0),
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
 };
 
 // ================= USER: FILTER MOVIES (MAIN API) =================
-exports.filterMovies = (req, res) => {
+exports.filterMovies = async (req, res) => {
   const { genre, country, year, sort } = req.query;
+  const { page, limit, offset } = parsePagination(req);
 
-  let sql = `
-    SELECT 
-      m.id,
-      m.title,
-      m.avatar_url,
-      m.background_url,
-      m.release_date,
-      c.name AS country,
-      GROUP_CONCAT(g.name) AS genres,
-      m.required_vip_level
+  let baseSql = `
     FROM movies m
     LEFT JOIN countries c ON m.country_id = c.id
     LEFT JOIN movie_genres mg ON m.id = mg.movie_id
@@ -421,9 +482,9 @@ exports.filterMovies = (req, res) => {
 
   let params = [];
 
-  // ===== FILTER GENRE (FIX CHUẨN) =====
+  // ===== FILTER GENRE =====
   if (genre) {
-    sql += `
+    baseSql += `
       AND EXISTS (
         SELECT 1
         FROM movie_genres mg2
@@ -437,22 +498,36 @@ exports.filterMovies = (req, res) => {
 
   // ===== FILTER COUNTRY =====
   if (country) {
-    sql += " AND c.name = ?";
+    baseSql += " AND c.name = ?";
     params.push(country);
   }
 
   // ===== FILTER YEAR =====
   if (year) {
     if (year === "Trước 2022") {
-      sql += " AND YEAR(m.release_date) < ?";
+      baseSql += " AND YEAR(m.release_date) < ?";
       params.push(2022);
     } else {
-      sql += " AND YEAR(m.release_date) = ?";
+      baseSql += " AND YEAR(m.release_date) = ?";
       params.push(Number(year));
     }
   }
 
-  sql += " GROUP BY m.id";
+  const countSql = `SELECT COUNT(DISTINCT m.id) AS total ${baseSql}`;
+
+  let sql = `
+    SELECT
+      m.id,
+      m.title,
+      m.avatar_url,
+      m.background_url,
+      m.release_date,
+      c.name AS country,
+      GROUP_CONCAT(DISTINCT g.name) AS genres,
+      m.required_vip_level
+    ${baseSql}
+    GROUP BY m.id
+  `;
 
   // ===== SORT =====
   if (sort === "new") {

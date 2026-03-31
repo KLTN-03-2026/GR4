@@ -243,7 +243,7 @@ const Navbar = () => {
                                     <span className="w-1 h-1 bg-white/10 rounded-full"></span>
                                     <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 rounded-md border border-primary/20">
                                       <Star className="w-3 h-3 text-primary fill-primary" />
-                                      <span className="text-[10px] font-black text-primary">{movie.rating || '8.5'}</span>
+                                      <span className="text-[10px] font-black text-primary">{movie.rating ?? '0'}</span>
                                     </div>
                                   </div>
                                   <p className="text-[11px] text-on-surface-variant/60 mt-3 font-medium tracking-wide">

@@ -10,7 +10,8 @@ import {
   Megaphone,
   ArrowRight,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils.js';
@@ -123,31 +124,18 @@ export default function CommentManagement() {
                     </p>
 
                     <div className="mt-4 flex flex-wrap items-center gap-4">
-                      <div className="flex items-center gap-4">
-                        <button className="flex items-center gap-1 text-xs text-on-surface-variant hover:text-on-surface">
-                          <ThumbsUp className="w-3 h-3" /> 12
-                        </button>
-                        <button className="flex items-center gap-1 text-xs text-on-surface-variant hover:text-on-surface">
-                          <ThumbsDown className="w-3 h-3" /> 0
-                        </button>
-                        <button className="flex items-center gap-1 text-xs text-on-surface-variant hover:text-primary-container">
-                          <Flag className="w-3 h-3" /> Báo cáo
-                        </button>
+                      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-on-surface-variant">
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <Star
+                            key={index}
+                            className={`w-3 h-3 ${index < comment.rating ? 'text-primary fill-primary' : 'text-on-surface-variant'}`}
+                          />
+                        ))}
+                        <span>{comment.rating || 0}</span>
                       </div>
 
                       <div className="ml-auto flex items-center gap-3 bg-surface-container-highest/50 px-3 py-1.5 rounded-full border border-outline-variant/10">
-                        <div className="flex items-center gap-1.5">
-                          <Sparkles className="w-3 h-3 text-primary-container" />
-                          <span className="text-[10px] font-black uppercase text-on-surface-variant">AI Suggestion:</span>
-                          <span className={cn(
-                            "text-[10px] font-black uppercase",
-                            comment.aiSuggestion.includes('Phê duyệt') ? "text-green-400" : "text-primary-container"
-                          )}>
-                            {comment.aiSuggestion}
-                          </span>
-                        </div>
-                        <div className="w-px h-3 bg-outline-variant/20"></div>
-                        <span className="text-[10px] font-bold text-on-surface-variant">{comment.aiConfidence} Confidence</span>
+                        <span className="text-[10px] font-black uppercase text-on-surface-variant">{comment.createdAt || comment.time || ''}</span>
                       </div>
                     </div>
                   </div>

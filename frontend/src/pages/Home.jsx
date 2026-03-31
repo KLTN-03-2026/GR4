@@ -18,7 +18,7 @@ const Home = () => {
     description: movie.description,
     image: movie.avatar_url || movie.background_url || movie.hero || movie.hero_url,
     background: movie.background_url || movie.hero || movie.hero_url || movie.avatar_url,
-    rating: parseFloat(movie.rating) || 8.5,
+    rating: parseFloat(movie.rating) || 0,
     year: movie.release_date ? new Date(movie.release_date).getFullYear() : 2024,
     genre: movie.genres ? movie.genres.split(',')[0].trim() : 'Phim',
     tag: movie.required_vip_level > 0 ? 'VIP' : 'Miễn phí',
@@ -46,7 +46,7 @@ const Home = () => {
     title: 'Cinema',
     description: 'Hãy khám phá kho phim',
     image: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=2000',
-    rating: 8.5,
+    rating: 0,
     year: 2024,
     genre: 'PHIM',
   };
@@ -90,7 +90,7 @@ const Home = () => {
               </span>
               <div className="flex items-center gap-2 glass px-3 py-1 rounded-lg">
                 <Star className="w-3.5 h-3.5 text-primary fill-primary" />
-                <span className="text-sm font-black text-white">{backgroundMovie.rating || '8.9'}</span>
+                <span className="text-sm font-black text-white">{backgroundMovie.rating ?? '0.0'}</span>
               </div>
               <span className="text-on-surface-variant text-xs font-black uppercase tracking-[0.2em] opacity-60">
                 {backgroundMovie.year} • {backgroundMovie.genre || 'HÀNH ĐỘNG'}
