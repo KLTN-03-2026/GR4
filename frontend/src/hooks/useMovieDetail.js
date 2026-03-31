@@ -6,6 +6,10 @@ const transformMovie = (movie) => ({
   id: movie.id,
   title: movie.title,
   description: movie.description,
+
+  // ✅ FIX QUAN TRỌNG
+  movie_url: movie.movie_url || movie.video_url || movie.stream_url,
+
   image: movie.avatar_url || movie.background_url || movie.hero || movie.hero_url,
   background: movie.background_url || movie.hero || movie.hero_url || movie.avatar_url,
   poster: movie.avatar_url,

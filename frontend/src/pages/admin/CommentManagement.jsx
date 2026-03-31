@@ -39,22 +39,15 @@ export default function CommentManagement() {
 
   const stats = [
     { label: 'Tổng bình luận', value: comments.length, sub: '+24% hôm nay', color: 'text-green-400' },
-    { label: 'Đang chờ duyệt', value: pendingCount, sub: 'Cần xử lý', color: 'text-primary-container' },
-    { label: 'Báo cáo vi phạm', value: violationCount, sub: 'Cần kiểm tra gấp', color: 'text-primary-container' },
-    { label: 'Tỷ lệ tích cực', value: '92%', sub: 'Dựa trên AI phân tích', color: 'text-green-400' },
-  ];
+    ];
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       <PageHeader
         title="QUẢN LÝ BÌNH LUẬN"
-        description="Hệ thống kiểm duyệt nội dung thông minh tích hợp AI. Tự động phát hiện spam, ngôn từ kích động và quảng cáo trái phép."
-        badge="AI Moderation"
+        description="Hệ thống kiểm duyệt nội dung bình luận."
+        badge="Comment Control"
       >
-        <button className="px-6 py-2.5 bg-surface-container rounded-xl text-on-surface font-bold hover:bg-surface-container-high transition-all flex items-center gap-2">
-          <Megaphone className="w-5 h-5" />
-          Thông báo cộng đồng
-        </button>
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -70,11 +63,6 @@ export default function CommentManagement() {
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 lg:col-span-9 bg-surface-container-low rounded-2xl overflow-hidden border border-outline-variant/10">
           <div className="p-6 border-b border-surface-container-high flex items-center justify-between">
-            <div className="flex gap-4">
-              <button className="text-sm font-bold text-primary-container border-b-2 border-primary-container pb-1">Tất cả</button>
-              <button className="text-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors">Chờ duyệt (84)</button>
-              <button className="text-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors">Đã báo cáo (12)</button>
-            </div>
             <div className="flex items-center gap-2 bg-surface-container px-3 py-1.5 rounded-lg border border-outline-variant/10">
               <Search className="w-4 h-4 text-on-surface-variant" />
               <input
@@ -96,23 +84,17 @@ export default function CommentManagement() {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-on-surface">{comment.user}</span>
-                          <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-tighter">tại</span>
+                          <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-tighter"> đã bình luận trong phim </span>
                           <span className="text-xs font-bold text-primary-container hover:underline cursor-pointer">{comment.movie}</span>
                         </div>
                         <p className="text-xs text-on-surface-variant mt-0.5">{comment.time}</p>
                       </div>
                       <div className="flex gap-2">
-                        <button className="p-2 rounded-lg bg-surface-container-high text-green-400 hover:bg-green-400 hover:text-white transition-all shadow-sm">
-                          <CheckCircle2 className="w-4 h-4" />
-                        </button>
                         <button
                           onClick={() => handleDeleteClick(comment)}
                           className="p-2 rounded-lg bg-surface-container-high text-primary-container hover:bg-primary-container hover:text-white transition-all shadow-sm"
                         >
                           <Trash2 className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all">
-                          <MoreVertical className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -122,22 +104,6 @@ export default function CommentManagement() {
                     )}>
                       {comment.content}
                     </p>
-
-                    <div className="mt-4 flex flex-wrap items-center gap-4">
-                      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-on-surface-variant">
-                        {Array.from({ length: 5 }, (_, index) => (
-                          <Star
-                            key={index}
-                            className={`w-3 h-3 ${index < comment.rating ? 'text-primary fill-primary' : 'text-on-surface-variant'}`}
-                          />
-                        ))}
-                        <span>{comment.rating || 0}</span>
-                      </div>
-
-                      <div className="ml-auto flex items-center gap-3 bg-surface-container-highest/50 px-3 py-1.5 rounded-full border border-outline-variant/10">
-                        <span className="text-[10px] font-black uppercase text-on-surface-variant">{comment.createdAt || comment.time || ''}</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -149,42 +115,6 @@ export default function CommentManagement() {
               Xem thêm bình luận cũ hơn
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
-          </div>
-        </div>
-
-        <div className="col-span-12 lg:col-span-3 space-y-6">
-          <div className="bg-surface-container-low p-6 rounded-2xl border border-outline-variant/10">
-            <h3 className="text-lg font-black font-headline mb-4">Quy tắc cộng đồng</h3>
-            <div className="space-y-4">
-              {[
-                { label: 'Không spam link lậu', status: 'Active' },
-                { label: 'Ngôn từ văn minh', status: 'Active' },
-                { label: 'Không quảng cáo', status: 'Active' },
-                { label: 'Tránh Spoiler', status: 'Warning', color: 'text-yellow-400' },
-              ].map((rule, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <span className="text-sm text-on-surface-variant font-medium">{rule.label}</span>
-                  <span className={cn("text-[10px] font-black uppercase", rule.color || "text-green-400")}>{rule.status}</span>
-                </div>
-              ))}
-            </div>
-            <button className="w-full mt-6 py-2 text-xs font-bold border border-outline-variant/20 rounded-lg hover:bg-surface-container-high transition-all">Chỉnh sửa quy tắc</button>
-          </div>
-
-          <div className="bg-primary-container p-6 rounded-2xl shadow-xl shadow-primary-container/20 relative overflow-hidden group">
-            <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-              <Sparkles className="w-32 h-32" />
-            </div>
-            <h3 className="text-xl font-black font-headline text-white mb-2 leading-tight">AI Moderator<br />đang hoạt động</h3>
-            <p className="text-white/80 text-xs font-medium mb-4">Đã tự động chặn 1,240 bình luận vi phạm trong 24h qua.</p>
-            <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="w-6 h-6 rounded-full border-2 border-primary-container bg-white/20"></div>
-                ))}
-              </div>
-              <span className="text-[10px] font-bold text-white uppercase tracking-tighter">+12 Moderators online</span>
-            </div>
           </div>
         </div>
       </div>
