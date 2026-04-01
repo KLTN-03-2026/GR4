@@ -150,8 +150,8 @@ const Home = () => {
           </div>
         </div>
       </section>
-            <div class="h-15"></div>      
-            {/* <div class="mt-5"></div>        */}
+            <div className="h-15"></div>      
+            {/* <div className="mt-5"></div>        */}
       <main className="relative z-20 -mt-24 space-y-32 pb-40">
         <AnimatePresence mode="wait">
           {!showAll ? (

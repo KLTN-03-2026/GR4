@@ -1,43 +1,31 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
-  Play,
-  Pause,
-  ArrowLeft,
-  Volume2,
-  Settings,
-  Maximize,
   MessageSquare,
-  Send,
   Star,
   Heart,
   Share2,
   ChevronRight,
-  Monitor,
-  Cpu,
-  Zap,
-  SkipForward
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 
 import { useMovieDetail } from '../hooks/useMovieDetail';
 import { useAuth } from '../hooks/useAuth';
-import Plyr from 'plyr';
-import 'plyr/dist/plyr.css';
-import Hls from 'hls.js';
 import { useComments } from '../hooks/useComments';
 import { useRating } from '../hooks/useRating';
 import CommentSection from '../components/shared/CommentSection';
 import CommentForm from '../components/shared/CommentForm';
 import StarRating from '../components/shared/StarRating';
 import { canWatchMovie } from '../utils/vip';
+import { obfuscate } from '../utils/obfuscate';
+import PlyrPlayer from '../components/PlyrPlayer';
 
 
 const Watch = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { movie, recommendations, isLoading } = useMovieDetail(id);
+  const { movie, recommendations, isLoading, error: movieError } = useMovieDetail(id);
   const {
     comments,
     newComment,
@@ -55,106 +43,12 @@ const Watch = () => {
     updateRating,
   } = useRating(id);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [activeServer, setActiveServer] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const controlsTimeoutRef = useRef(null);
-  const videoRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
-
-  // Initialize Plyr with HLS support
-  useEffect(() => {
-    if (!videoRef.current || !movie?.movie_url) {
-      console.warn('Video ref or movie URL not available');
-      return;
-    }
-
-    const video = videoRef.current;
-    let hls = null;
-    let plyr = null;
-
-    try {
-      plyr = new Plyr(video, {
-        controls: [
-          'play-large',
-          'play',
-          'progress',
-          'current-time',
-          'duration',
-          'mute',
-          'volume',
-          'settings',
-          'fullscreen'
-        ],
-        settings: ['quality', 'speed'],
-        speed: {
-          selected: 1,
-          options: [0.5, 0.75, 1, 1.25, 1.5, 2]
-        }
-      });
-
-      console.log('VIDEO URL:', movie.movie_url);
-
-      // ✅ FIX autoplay bị chặn
-      video.muted = true;
-
-      // ✅ HLS
-      if (movie.movie_url.includes('.m3u8')) {
-        if (Hls.isSupported()) {
-          hls = new Hls({
-            enableWorker: true,
-            lowLatencyMode: true
-          });
-
-          hls.loadSource(movie.movie_url);
-          hls.attachMedia(video);
-
-          hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            console.log('HLS loaded');
-
-            // ✅ QUAN TRỌNG
-            plyr.play().catch(() => { });
-            setIsPlaying(true);
-          });
-
-          hls.on(Hls.Events.ERROR, (event, data) => {
-            console.error('HLS Error:', data);
-          });
-
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = movie.movie_url;
-
-          video.onloadedmetadata = () => {
-            video.play().catch(() => { });
-            setIsPlaying(true);
-          };
-        }
-      }
-      // ✅ MP4
-      else {
-        video.src = movie.movie_url;
-
-        video.onloadedmetadata = () => {
-          video.play().catch(() => { });
-          setIsPlaying(true);
-        };
-      }
-
-      // Sync trạng thái
-      plyr.on('play', () => setIsPlaying(true));
-      plyr.on('pause', () => setIsPlaying(false));
-
-    } catch (error) {
-      console.error('Player error:', error);
-    }
-
-    return () => {
-      if (hls) hls.destroy();
-      if (plyr) plyr.destroy();
-    };
-  }, [movie?.movie_url]);
 
   const handleMouseMove = () => {
     setShowControls(true);
@@ -166,13 +60,25 @@ const Watch = () => {
 
   const canWatch = canWatchMovie(user, movie);
 
-  if (isLoading || !movie) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
         <div className="relative w-16 h-16">
           <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
           <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
+      </div>
+    );
+  }
+
+  if (movieError || !movie) {
+    return (
+      <div className="min-h-screen bg-surface flex flex-col items-center justify-center text-center p-10">
+        <h2 className="text-4xl font-black uppercase tracking-widest text-white/90 mb-6">Không tìm thấy phim</h2>
+        <p className="text-white/40 max-w-md mb-10 leading-relaxed italic">{movieError || 'Phim này không tồn tại hoặc đã bị gỡ bỏ.'}</p>
+        <Link to="/" className="px-12 py-5 bg-primary text-white rounded-2xl font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-2xl shadow-primary/20">
+          Về trang chủ
+        </Link>
       </div>
     );
   }
@@ -203,56 +109,47 @@ const Watch = () => {
             >
               {/* Video Player - Plyr with HLS Support */}
               {!canWatch ? (
-                <div className="absolute inset-0 z-0">
+                <div className="absolute inset-0 z-0 group/vip">
                   <img
                     src={movie.image}
-                    className="w-full h-full object-cover brightness-[0.3]"
+                    className="w-full h-full object-cover brightness-[0.2] scale-110 blur-sm transition-all duration-1000 group-hover/vip:scale-100 group-hover/vip:blur-0"
                     alt={movie.title}
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/40"></div>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20 gap-6 p-6 text-center">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-yellow-500 to-yellow-300 shadow-[0_0_50px_rgba(234,179,8,0.4)] flex items-center justify-center mb-4">
-                      <Star className="w-10 h-10 text-black fill-black" />
-                    </div>
-                    <div>
-                      <h2 className="text-3xl font-black uppercase tracking-[0.2em] text-white">Nội dung VIP</h2>
-                      <p className="text-sm font-medium text-white/70 mt-4 max-w-md mx-auto leading-relaxed">
-                        Phim <strong>{movie.title}</strong> yêu cầu tài khoản VIP. Hãy nâng cấp ngay để trải nghiệm không giới hạn với chất lượng cao nhất.
+                  <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/80 to-transparent"></div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-20 gap-8 p-8 text-center max-w-2xl mx-auto">
+                    <motion.div 
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="w-24 h-24 rounded-[2rem] bg-gradient-to-tr from-yellow-600 to-yellow-400 shadow-[0_0_60px_rgba(202,138,4,0.3)] flex items-center justify-center mb-2 rotate-12"
+                    >
+                      <Star className="w-12 h-12 text-black fill-black" />
+                    </motion.div>
+                    <div className="space-y-4">
+                      <h2 className="text-4xl lg:text-5xl font-black uppercase tracking-[0.1em] text-white leading-tight">
+                        Trải nghiệm <span className="text-yellow-500">Đẳng Cấp VIP</span>
+                      </h2>
+                      <p className="text-sm lg:text-base font-medium text-white/60 leading-relaxed">
+                        Phim <strong>{movie.title}</strong> dành riêng cho thành viên VIP. Nâng cấp ngay để tận hưởng chất lượng 4K, không quảng cáo và âm thanh vòm Dolby Atmos.
                       </p>
                     </div>
-                    <Link to="/vip" className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-yellow-400 text-black px-10 py-4 rounded-xl font-bold uppercase tracking-wider hover:scale-105 transition-transform shadow-xl shadow-yellow-500/20">
-                      Nâng cấp VIP ngay
-                    </Link>
+                    <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                      <Link to="/vip" className="inline-flex items-center justify-center gap-3 bg-yellow-500 text-black px-12 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-yellow-400 transition-all shadow-2xl shadow-yellow-500/20 active:scale-95">
+                        Nâng cấp VIP ngay
+                      </Link>
+                      <Link to="/" className="inline-flex items-center justify-center gap-3 bg-white/5 text-white px-12 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-white/10 transition-all border border-white/10 active:scale-95">
+                        Về trang chủ
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ) : movie.movie_url ? (
-                <>
-                  <video
-                    ref={videoRef}
-                    className="w-full h-full object-contain bg-black plyr-player"
-                    controls
-                    crossOrigin="anonymous"
-                    poster={movie.image}
-                  />
-
-                  {/* Fallback Play Overlay - Only shown if video hasn't started yet */}
-                  <AnimatePresence>
-                    {!isPlaying && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1.2 }}
-                        className="absolute inset-0 flex flex-col items-center justify-center z-20 gap-6 bg-black/40 pointer-events-none"
-                      >
-                        <div className="text-center">
-                          <h2 className="text-2xl font-black uppercase tracking-[0.3em] text-white/90">{movie.title}</h2>
-                          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mt-2">Đã sẵn sàng khởi chiếu</p>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </>
+                <PlyrPlayer 
+                  url={obfuscate(movie.movie_url)} 
+                  poster={movie.image} 
+                  title={movie.title}
+                  onPlayStateChange={setIsPlaying}
+                />
               ) : (
                 // Fallback if no movie URL
                 <div className="absolute inset-0 z-0">
@@ -266,9 +163,9 @@ const Watch = () => {
                   <motion.div
                     className="absolute inset-0 flex flex-col items-center justify-center z-20 gap-6"
                   >
-                    <div className="text-center">
+                    <div className="text-center p-10 glass-dark rounded-[3rem]">
                       <h2 className="text-2xl font-black uppercase tracking-[0.3em] text-white/90">Video không khả dụng</h2>
-                      <p className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mt-2">Vui lòng thử lại sau</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mt-4">Vui lòng thử lại sau hoặc đổi máy chủ</p>
                     </div>
                   </motion.div>
                 </div>
@@ -285,12 +182,27 @@ const Watch = () => {
               </div>
 
               <div className="flex gap-4 shrink-0">
+                <button 
+                  onClick={() => {
+                    const shareData = {
+                      title: movie.title,
+                      text: movie.description,
+                      url: window.location.href,
+                    };
+                    if (navigator.share) {
+                      navigator.share(shareData);
+                    } else {
+                      navigator.clipboard.writeText(window.location.href);
+                      alert('Đã sao chép liên kết phim!');
+                    }
+                  }}
+                  className="w-14 h-14 rounded-2xl glass-dark border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all group"
+                >
+                  <Share2 className="w-6 h-6 group-hover:text-primary transition-all scale-95 group-active:scale-125" />
+                </button>
                 <button className="w-14 h-14 rounded-2xl glass-dark border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all group">
                   <Heart className="w-6 h-6 group-hover:fill-primary group-hover:text-primary transition-all scale-95 group-active:scale-125" />
                 </button>
-                {/* <Link to="/vip" className="btn-primary py-4 px-10 text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20">
-                   Gói VIP
-                </Link> */}
               </div>
             </div>
 

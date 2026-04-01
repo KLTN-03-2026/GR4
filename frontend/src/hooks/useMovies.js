@@ -200,6 +200,7 @@ export function useMovies() {
       };
 
       const newMovie = await createMovie(payload);
+
       setMovies(prev => [...prev, newMovie]);
       setSuccessType('add');
       setIsAddModalOpen(false);
@@ -248,6 +249,7 @@ export function useMovies() {
           ? { ...m, ...payload } 
           : m
       ));
+
       setSuccessType('update');
       setIsEditModalOpen(false);
       resetFormData();

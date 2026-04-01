@@ -4,7 +4,7 @@ const db = mysql.createPool({
   host: '127.0.0.1',
   user: 'root',
   password: 'root1234',
-  database: 'movie_v5'
+  database: 'moviedb'
 });
 
 module.exports = db;

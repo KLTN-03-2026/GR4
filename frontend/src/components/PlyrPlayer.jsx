@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Plyr from 'plyr';
-import HLS from 'hls.js';
+import Hls from 'hls.js';
+import { deobfuscate } from '../utils/obfuscate';
 import 'plyr/dist/plyr.css';
 
 const PlyrPlayer = ({ url, poster, title, onPlayStateChange = () => {} }) => {
   const videoRef = useRef(null);
   const plyrRef = useRef(null);
+  const hlsRef = useRef(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,178 +20,203 @@ const PlyrPlayer = ({ url, poster, title, onPlayStateChange = () => {} }) => {
     setIsLoading(true);
     setError(null);
     const video = videoRef.current;
+    const decodedUrl = deobfuscate(url);
+    
     let hls = null;
+    let plyr = null;
 
-    try {
-      // Initialize Plyr
-      if (!plyrRef.current) {
-        plyrRef.current = new Plyr(video, {
-          controls: [
-            'play-large',
-            'play',
-            'progress',
-            'current-time',
-            'duration',
-            'mute',
-            'volume',
-            'settings',
-            'fullscreen'
-          ],
-          settings: ['quality', 'speed'],
-          quality: {
-            default: 720,
-            options: [360, 480, 720, 1080]
-          },
-          speed: {
-            selected: 1,
-            options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
-          },
-          tooltips: {
-            controls: true,
-            seek: true
-          },
-          captions: { active: true },
-          autoplay: false
-        });
-
-        // Plyr event listeners
-        plyrRef.current.on('play', () => {
-          console.log('Video playing');
-          onPlayStateChange(true);
-        });
-
-        plyrRef.current.on('pause', () => {
-          console.log('Video paused');
-          onPlayStateChange(false);
-        });
-
-        plyrRef.current.on('error', (error) => {
-          console.error('Plyr error:', error);
-          setError('Failed to load video');
-        });
+    const setupPlyr = (qualityOptions = {}) => {
+      // If plyr already exists, destroy it first
+      if (plyrRef.current) {
+        plyrRef.current.destroy();
       }
 
-      const plyr = plyrRef.current;
+      const options = {
+        controls: [
+          'play-large',
+          'play',
+          'progress',
+          'current-time',
+          'duration',
+          'mute',
+          'volume',
+          'settings',
+          'fullscreen'
+        ],
+        settings: ['quality', 'speed'],
+        speed: {
+          selected: 1,
+          options: [0.5, 0.75, 1, 1.25, 1.5, 2]
+        },
+        quality: qualityOptions,
+        tooltips: {
+          controls: true,
+          seek: true
+        },
+        autoplay: true,
+        title: title || 'Cinema+ Player',
+      };
 
-      // Handle HLS (.m3u8) streams
-      if (url.includes('.m3u8')) {
-        console.log('🎬 Loading HLS stream:', url);
+      const newPlyr = new Plyr(video, options);
+      plyrRef.current = newPlyr;
 
-        if (HLS.isSupported()) {
-          hls = new HLS({
-            debug: false,
+      newPlyr.on('play', () => onPlayStateChange(true));
+      newPlyr.on('pause', () => onPlayStateChange(false));
+      
+      newPlyr.on('error', (err) => {
+        console.error('Plyr error:', err);
+        // Don't show fatal error for minor Plyr issues unless it's constant
+      });
+
+      return newPlyr;
+    };
+
+    try {
+      if (decodedUrl.includes('.m3u8')) {
+
+        if (Hls.isSupported()) {
+          hls = new Hls({
             enableWorker: true,
             lowLatencyMode: true,
-            startLevel: 2
+            backBufferLength: 90,
+            maxBufferLength: 60,
           });
+          hlsRef.current = hls;
 
-          hls.loadSource(url);
+          hls.loadSource(decodedUrl);
           hls.attachMedia(video);
 
-          hls.on(HLS.Events.MANIFEST_PARSED, () => {
-            console.log('✅ HLS manifest loaded, available quality levels:', hls.levels.length);
+          hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+            
+            const availableQualities = data.levels.map(l => l.height);
+            const qualityConfig = {
+              default: availableQualities[availableQualities.length - 1] || 720, // Max quality by default if possible
+              options: availableQualities,
+              forced: true,
+              onChange: (newQuality) => {
+                const levelIndex = data.levels.findIndex(l => l.height === newQuality);
+                if (hlsRef.current) {
+                  hlsRef.current.currentLevel = levelIndex;
+                }
+              }
+            };
+
+            const p = setupPlyr(qualityConfig);
             setIsLoading(false);
-            // Don't auto-play
+            p.play().catch(() => {});
           });
 
-          hls.on(HLS.Events.ERROR, (event, data) => {
-            console.error('❌ HLS Error:', event, data);
+          hls.on(Hls.Events.ERROR, (event, data) => {
             if (data.fatal) {
               switch (data.type) {
-                case HLS.ErrorTypes.NETWORK_ERROR:
-                  console.error('Network error - retrying...');
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                  console.error('HLS Network Error, attempting recovery...');
                   hls.startLoad();
                   break;
-                case HLS.ErrorTypes.MEDIA_ERROR:
-                  console.error('Media error - attempting recovery...');
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                  console.error('HLS Media Error, attempting recovery...');
                   hls.recoverMediaError();
                   break;
                 default:
-                  setError('Unable to load video');
+                  setError('Lỗi kết nối máy chủ phát phim (Fatal Error)');
+                  hls.destroy();
+                  setIsLoading(false);
                   break;
               }
             }
           });
-
-          hls.on(HLS.Events.LEVEL_SWITCHED, (event, data) => {
-            console.log('Quality changed to level:', data.level);
-          });
-
-          // Attach to Plyr
-          plyr.hls = hls;
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          console.log('📱 Using Safari native HLS support');
-          video.src = url;
-          setIsLoading(false);
+          // Native Safari HLS
+          video.src = decodedUrl;
+          const p = setupPlyr();
+          video.addEventListener('loadedmetadata', () => {
+            setIsLoading(false);
+            p.play().catch(() => {});
+          });
         } else {
-          console.error('❌ HLS is not supported on this browser');
-          setError('HLS streaming not supported on your browser');
+          setError('Trình duyệt của bạn không hỗ trợ định dạng phim HLS này.');
           setIsLoading(false);
         }
       } else {
-        // Handle MP4 and other formats
-        console.log('🎬 Loading MP4 video:', url);
-        video.src = url;
-        video.load();
-
+        // Normal MP4 fallback
+        video.src = decodedUrl;
+        const p = setupPlyr();
         video.addEventListener('loadedmetadata', () => {
-          console.log('✅ Video metadata loaded');
           setIsLoading(false);
-        });
-
-        video.addEventListener('error', (e) => {
-          console.error('❌ Video load error:', e);
-          setError('Failed to load video');
-          setIsLoading(false);
+          p.play().catch(() => {});
         });
       }
-    } catch (error) {
-      console.error('Error initializing Plyr player:', error);
-      setError(error.message);
+    } catch (e) {
+      console.error('Error initializing PlyrPlayer:', e);
+      setError('Đã xảy ra lỗi khi khởi tạo trình phát phim.');
       setIsLoading(false);
     }
 
-    // Cleanup
     return () => {
-      if (hls) {
-        hls.destroy();
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
       }
       if (plyrRef.current) {
         plyrRef.current.destroy();
         plyrRef.current = null;
       }
     };
-  }, [url, onPlayStateChange]);
+  }, [url, title]); // Re-init on URL or title change
 
   return (
-    <div className="relative w-full h-full bg-black rounded-[3rem] overflow-hidden">
+    <div key={url} className="relative w-full h-full bg-black rounded-3xl lg:rounded-[3rem] overflow-hidden group/player shadow-2xl">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/60">
-          <div className="relative w-12 h-12">
+        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/80 backdrop-blur-sm">
+          <div className="relative w-16 h-16">
             <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
             <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-[0.3em] text-primary whitespace-nowrap animate-pulse">
+              Đang tải nội dung...
+            </span>
           </div>
         </div>
       )}
 
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black">
-          <div className="text-center space-y-4">
-            <p className="text-red-500 font-bold">{error}</p>
-            <p className="text-white/60 text-sm">Video URL: {url}</p>
+      {error && !isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center z-50 bg-surface px-6 text-center">
+          <div className="space-y-6 max-w-md">
+            <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto border border-red-500/20">
+              <span className="text-2xl text-red-500 font-bold italic">!</span>
+            </div>
+            <div>
+              <p className="text-white font-black uppercase tracking-widest text-lg">{error}</p>
+              <p className="text-white/40 text-[10px] mt-4 font-mono break-all bg-black/40 p-4 rounded-xl border border-white/5 uppercase">
+                Phim: {title || 'Cinema+ Player'}
+              </p>
+            </div>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-8 py-3 bg-white/5 hover:bg-white/10 text-white text-xs font-black uppercase tracking-widest rounded-xl border border-white/10 transition-all active:scale-95"
+            >
+              Thử tải lại trang
+            </button>
           </div>
         </div>
       )}
 
       <video
         ref={videoRef}
-        className="w-full h-full plyr-player"
+        className="w-full h-full plyr-player object-contain"
         poster={poster}
         crossOrigin="anonymous"
-        preload="metadata"
+        playsInline
+        webkit-playsinline="true"
+        preload="auto"
       />
+      
+      {/* Subtle bottom gradient cover to hide potential flickering on init */}
+      {!isLoading && !error && (
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none group-hover/player:opacity-0 transition-opacity duration-700"></div>
+      )}
     </div>
   );
 };
 
 export default PlyrPlayer;
+

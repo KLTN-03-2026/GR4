@@ -7,8 +7,12 @@ const transformMovie = (movie) => ({
   title: movie.title,
   description: movie.description,
 
-  // ✅ FIX QUAN TRỌNG
-  movie_url: movie.movie_url || movie.video_url || movie.stream_url,
+  // ✅ FIX QUAN TRỌNG: Chỉ trả về URL nếu tồn tại trong DB, tránh lộ lỗi 404 và link máy chủ tại console
+  movie_url: movie.movie_url 
+    ? movie.movie_url.startsWith('http')
+      ? movie.movie_url
+      : `http://localhost:8080${movie.movie_url}`
+    : null,
 
   image: movie.avatar_url || movie.background_url || movie.hero || movie.hero_url,
   background: movie.background_url || movie.hero || movie.hero_url || movie.avatar_url,

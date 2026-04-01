@@ -78,8 +78,8 @@ function convertToHLS(filename, movieId) {
         // Ghi master playlist
         fs.writeFileSync(path.join(outputDir, 'master.m3u8'), masterPlaylist);
 
-        // Trả về URL cho frontend (phải match với route /api/hls ở server.js)
-        const hlsPath = `/api/hls/${movieId}/hls/master.m3u8`;
+        // Trả về URL cho frontend (match với Nginx port 8080)
+        const hlsPath = `http://localhost:8080/hls/${movieId}/hls/master.m3u8`;
         resolve(hlsPath);
       })
       .on('error', (err) => {
