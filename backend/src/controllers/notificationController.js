@@ -37,6 +37,15 @@ exports.markAllAsRead = (req, res) => {
   });
 };
 
+exports.deleteAllRead = (req, res) => {
+  const userId = req.user.id;
+  const sql = "DELETE FROM notifications WHERE user_id = ? AND is_read = TRUE";
+  db.query(sql, [userId], (err, results) => {
+    if (err) return res.status(500).json({ message: "Lỗi Server", error: err });
+    res.status(200).json({ message: "Đã xóa thông báo đã đọc" });
+  });
+};
+
 exports.deleteNotification = (req, res) => {
   const userId = req.user.id;
   const notificationId = req.params.id;

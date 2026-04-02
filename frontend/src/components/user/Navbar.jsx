@@ -7,6 +7,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { isVipActive } from '../../utils/vip';
 import { getUnreadCount } from '../../service/notification_service';
 
+import ThemeToggle from '../shared/ThemeToggle';
+
 
 const Navbar = () => {
   const { user } = useAuth();
@@ -165,7 +167,7 @@ const Navbar = () => {
       <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${isSearchFocused ? 'bg-black/40 backdrop-blur-3xl border-b border-white/5' : 'bg-surface/40 premium-blur border-b border-white/5'}`}>
         <div className="flex justify-between items-center px-8 py-3 max-w-[1920px] mx-auto h-20">
           <div className="flex items-center gap-4 md:gap-12">
-            <button className="md:hidden text-white hover:text-primary transition-colors" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            <button className="md:hidden text-on-surface hover:text-primary transition-colors" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
               {isMobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
             </button>
             <Link to="/" className="text-2xl md:text-3xl font-black tracking-tighter text-primary uppercase font-manrope hover:scale-105 transition-transform active:scale-95 text-glow">
@@ -174,19 +176,19 @@ const Navbar = () => {
             <div className={`hidden md:flex items-center gap-10 font-manrope tracking-tight text-sm font-black uppercase transition-all duration-500 ${isSearchFocused ? 'opacity-20 blur-sm pointer-events-none' : 'opacity-100'}`}>
               <Link
                 to="/"
-                className={`transition-all duration-300 hover:text-white ${location.pathname === '/' ? 'text-primary' : 'text-on-surface-variant'}`}
+                className={`transition-all duration-300 hover:text-primary ${location.pathname === '/' ? 'text-primary' : 'text-on-surface-variant'}`}
               >
                 Trang chủ
               </Link>
               <Link
                 to="/filter"
-                className={`transition-all duration-300 hover:text-white ${location.pathname === '/filter' ? 'text-primary' : 'text-on-surface-variant'}`}
+                className={`transition-all duration-300 hover:text-primary ${location.pathname === '/filter' ? 'text-primary' : 'text-on-surface-variant'}`}
               >
                 Lọc Phim
               </Link>
               <Link
                 to="/vip"
-                className={`transition-all duration-300 hover:text-white ${location.pathname === '/vip' ? 'text-primary' : 'text-on-surface-variant'}`}
+                className={`transition-all duration-300 hover:text-primary ${location.pathname === '/vip' ? 'text-primary' : 'text-on-surface-variant'}`}
               >
                 Gói VIP
               </Link>
@@ -195,8 +197,8 @@ const Navbar = () => {
 
           <div className="flex items-center gap-2 md:gap-8">
             <div ref={searchRef} className="relative hidden lg:block">
-              <form onSubmit={handleSearchSubmit} className={`flex items-center bg-white/5 rounded-2xl px-5 py-3 transition-all duration-500 border group ${isSearchFocused ? 'w-[500px] border-primary/50 bg-black/60 shadow-[0_0_30px_rgba(229,9,20,0.1)]' : 'w-72 border-white/10 hover:border-white/20'}`}>
-                <Search className={`w-4 h-4 mr-4 transition-colors duration-300 ${isSearchFocused ? 'text-primary shadow-primary' : 'text-on-surface-variant group-hover:text-white'}`} />
+              <form onSubmit={handleSearchSubmit} className={`flex items-center bg-surface-container rounded-2xl px-5 py-3 transition-all duration-500 border group ${isSearchFocused ? 'w-[500px] border-primary/50 bg-surface shadow-[0_0_30px_rgba(229,9,20,0.1)]' : 'w-72 border-outline-variant/10 hover:border-outline-variant/20'}`}>
+                <Search className={`w-4 h-4 mr-4 transition-colors duration-300 ${isSearchFocused ? 'text-primary shadow-primary' : 'text-on-surface-variant group-hover:text-primary'}`} />
                 <input
                   type="text"
                   value={searchQuery}
@@ -280,7 +282,7 @@ const Navbar = () => {
                     ) : (
                       <div className="p-8">
                         <div className="flex items-center justify-between mb-8">
-                          <h3 className="font-black text-xs uppercase tracking-[0.2em] text-white flex items-center gap-3">
+                          <h3 className="font-black text-xs uppercase tracking-[0.2em] text-on-surface flex items-center gap-3">
                             <History className="w-5 h-5 text-primary" />
                             Lịch sử tìm kiếm
                           </h3>
@@ -292,11 +294,11 @@ const Navbar = () => {
                               <button
                                 key={index}
                                 onClick={() => handleHistoryItemClick(item)}
-                                className="w-full text-left group flex items-center justify-between p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all cursor-pointer border border-transparent hover:border-white/5"
+                                className="w-full text-left group flex items-center justify-between p-4 rounded-2xl bg-surface-container/50 hover:bg-surface-container transition-all cursor-pointer border border-transparent hover:border-outline-variant/10"
                               >
                                 <div className="flex items-center gap-4">
                                   <Clock className="w-4 h-4 text-on-surface-variant group-hover:text-primary transition-colors" />
-                                  <span className="text-sm font-bold text-on-surface/80 group-hover:text-white">{item}</span>
+                                  <span className="text-sm font-bold text-on-surface/80 group-hover:text-primary">{item}</span>
                                 </div>
                                 <X className="w-4 h-4 text-on-surface-variant/20 group-hover:text-red-500 transition-colors" />
                               </button>
@@ -317,15 +319,16 @@ const Navbar = () => {
             <div className={`flex items-center gap-3 md:gap-6 transition-all duration-500 ${isSearchFocused ? 'opacity-20 blur-sm pointer-events-none' : 'opacity-100'}`}>
               {user ? (
                 <>
-                  <Link to="/profile/notifications" className="text-on-surface-variant hover:text-primary transition-colors p-2 relative group flex-shrink-0">
+                  <ThemeToggle />
+                  <Link to="/profile/notifications" className="text-on-surface-variant hover:text-primary transition-colors p-2 relative group shrink-0">
                     <Bell className="w-5 h-5 md:w-6 md:h-6 group-hover:rotate-12 transition-transform" />
                     {unreadCount > 0 && (
                        <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 md:w-2 md:h-2 bg-primary rounded-full border-2 border-surface animate-pulse"></span>
                     )}
                   </Link>
 
-                  <Link to="/profile" className="flex items-center gap-2 md:gap-4 group cursor-pointer bg-white/5 pl-1.5 pr-2 md:pr-5 py-1.5 md:py-2 rounded-2xl border border-white/5 hover:border-primary/30 transition-all shadow-xl max-w-[150px] md:max-w-none">
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl overflow-hidden border border-white/10 group-hover:border-primary/50 transition-all shadow-lg transform group-hover:scale-95 flex-shrink-0">
+                  <Link to="/profile" className="flex items-center gap-2 md:gap-4 group cursor-pointer bg-surface-container pl-1.5 pr-2 md:pr-5 py-1.5 md:py-2 rounded-2xl border border-outline-variant/10 hover:border-primary/30 transition-all shadow-xl max-w-[150px] md:max-w-none">
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl overflow-hidden border border-outline-variant group-hover:border-primary/50 transition-all shadow-lg transform group-hover:scale-95 shrink-0">
                       <img
                         src={
                           user.avatar ||
@@ -337,19 +340,19 @@ const Navbar = () => {
                       />
                     </div>
                     <div className="hidden md:block overflow-hidden">
-                      <p className="text-[10px] md:text-xs font-black text-white group-hover:text-primary transition-colors uppercase tracking-widest truncate">{user?.name || "Người dùng"}</p>
+                      <p className="text-[10px] md:text-xs font-black text-on-surface group-hover:text-primary transition-colors uppercase tracking-widest truncate">{user?.name || "Người dùng"}</p>
                       <p className="text-[8px] md:text-[9px] font-black text-primary uppercase tracking-[0.2em] opacity-80">
                         {isVipActive(user) ? "VIP MEMBER" : "STANDARD"}
                       </p>
-
                     </div>
                   </Link>
                 </>
               ) : (
                 <div className="flex items-center gap-3 md:gap-6">
+                  <ThemeToggle />
                   <Link
                     to="/login"
-                    className="text-[11px] md:text-sm font-black text-white uppercase tracking-widest hover:text-primary transition-colors px-2 md:px-4 py-2"
+                    className="text-[11px] md:text-sm font-black text-on-surface uppercase tracking-widest hover:text-primary transition-colors px-2 md:px-4 py-2"
                   >
                     Đăng nhập
                   </Link>
@@ -375,9 +378,9 @@ const Navbar = () => {
             exit={{ opacity: 0, y: -20 }}
             className="fixed top-20 left-0 w-full bg-black/95 backdrop-blur-3xl border-b border-white/10 z-40 md:hidden flex flex-col p-6 gap-6 shadow-2xl"
           >
-            <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-black text-white hover:text-primary transition-colors uppercase tracking-widest border-b border-white/5 pb-4">Trang chủ</Link>
-            <Link to="/filter" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-black text-white hover:text-primary transition-colors uppercase tracking-widest border-b border-white/5 pb-4">Lọc Phim</Link>
-            <Link to="/vip" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-black text-white hover:text-primary transition-colors uppercase tracking-widest border-b border-white/5 pb-4">Gói VIP</Link>
+            <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-black text-on-surface hover:text-primary transition-colors uppercase tracking-widest border-b border-outline-variant/10 pb-4">Trang chủ</Link>
+            <Link to="/filter" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-black text-on-surface hover:text-primary transition-colors uppercase tracking-widest border-b border-outline-variant/10 pb-4">Lọc Phim</Link>
+            <Link to="/vip" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-black text-on-surface hover:text-primary transition-colors uppercase tracking-widest border-b border-outline-variant/10 pb-4">Gói VIP</Link>
           </motion.div>
         )}
       </AnimatePresence>

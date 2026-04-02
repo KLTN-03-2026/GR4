@@ -1,6 +1,6 @@
-import React from 'react';
-import { Eye, EyeOff, ChevronRight, User, Mail, Globe, Calendar, Lock, ShieldCheck, Check, ArrowRight } from 'lucide-react';
-import { motion } from 'motion/react';
+import React, { useState } from 'react';
+import { Eye, EyeOff, ChevronRight, User, Mail, Globe, Calendar, Lock, ShieldCheck, Check, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const ProfileEdit = ({ 
   editData, 
@@ -8,6 +8,27 @@ const ProfileEdit = ({
   setIsEditing, 
   updateProfile, 
 }) => {
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleSave = async () => {
+    setSuccessMsg("");
+    setErrorMsg("");
+    setLoading(true);
+
+    try {
+      await updateProfile(editData);
+      setSuccessMsg("Cập nhật thông tin thành công!");
+      setTimeout(() => {
+        setIsEditing(false);
+      }, 1500);
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || "Có lỗi xảy ra khi lưu cấu hình.");
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-16 max-w-5xl mx-auto pb-32">
       {/* Section 1: Personal Info */}
@@ -89,21 +110,48 @@ const ProfileEdit = ({
               </div>
             </div>
 
-            <div className="md:col-span-2 pt-10 flex flex-col md:flex-row justify-end gap-6">
+            <div className="md:col-span-2 pt-4">
+              <AnimatePresence>
+                {errorMsg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="p-5 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-center gap-4 shadow-[0_10px_30px_rgba(239,68,68,0.1)] mb-6"
+                  >
+                    <AlertCircle className="w-6 h-6 text-red-500 shrink-0" />
+                    <p className="text-red-400 text-sm font-bold tracking-wide">{errorMsg}</p>
+                  </motion.div>
+                )}
+
+                {successMsg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="p-5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center gap-4 shadow-[0_10px_30px_rgba(16,185,129,0.1)] mb-6"
+                  >
+                    <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" />
+                    <p className="text-emerald-400 text-sm font-bold tracking-wide">{successMsg}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="md:col-span-2 pt-2 flex flex-col md:flex-row justify-end gap-6">
               <button
                 onClick={() => setIsEditing(false)}
-                className="px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] text-white/40 hover:text-white hover:bg-white/5 transition-all"
+                disabled={loading}
+                className="px-12 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] text-white/40 hover:text-white hover:bg-white/5 transition-all disabled:opacity-50"
               >
                 Hủy bỏ thay đổi
               </button>
               <button
-                onClick={() => {
-                  updateProfile(editData);
-                  setIsEditing(false);
-                }}
-                className="btn-primary px-14 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all hover:scale-[1.05] shadow-[0_20px_40px_rgba(229,9,20,0.3)] flex items-center justify-center gap-3"
+                onClick={handleSave}
+                disabled={loading}
+                className="btn-primary px-14 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all hover:scale-[1.05] shadow-[0_20px_40px_rgba(229,9,20,0.3)] flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:scale-100 group"
               >
-                Lưu cấu hình <Check className="w-4 h-4" />
+                {loading ? "Đang lưu..." : "Lưu cấu hình"} <Check className="w-4 h-4 group-disabled:hidden" />
               </button>
             </div>
           </div>

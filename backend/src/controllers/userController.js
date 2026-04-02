@@ -158,6 +158,12 @@ exports.changePassword = async (req, res) => {
       return res.status(500).json({ message: "Cập nhật mật khẩu thất bại" });
     }
 
+    // 5️⃣ Thêm thông báo
+    await db.promise().query(
+      "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
+      [userId, "Bảo mật tài khoản", "Mật khẩu của bạn vừa được thay đổi. Nếu bạn không thực hiện hành động này, vui lòng đổi mật khẩu ngay.", "security"]
+    );
+
     res.json({ message: "Đổi mật khẩu thành công" });
 
   } catch (err) {
@@ -185,7 +191,13 @@ exports.updateUserforUser = (req, res) => {
       return res.status(404).json({ message: "User không tồn tại" });
     }
 
-    res.json({ message: "User updated successfully" });
+    db.query(
+      "INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)",
+      [id, "Cập nhật hồ sơ", "Thông tin cá nhân của bạn đã được cập nhật thành công.", "user"],
+      () => {
+        res.json({ message: "User updated successfully" });
+      }
+    );
   });
 };
 

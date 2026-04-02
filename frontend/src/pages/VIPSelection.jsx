@@ -37,12 +37,11 @@ export default function VIPSelection() {
       features: [
         'Tất cả quyền lợi VIP không giới hạn', 
         'Đặc quyền xem trước phim mới nhất', 
-        'Chất lượng 4K Ultra HD + Dolby Atmos', 
-        'Không quảng cáo 100%',
-        'Tải phim xem offline mọi lúc'
+        'Chất lượng 4K Ultra HD + Dolby Atmos'
+        
       ],
       isFeatured: true,
-      badge: 'Gói Phổ Biến Nhất'
+      badge: 'Đáng mua Nhất'
     }
   ] : [];
 
@@ -71,7 +70,7 @@ export default function VIPSelection() {
           >
             <span className="inline-flex items-center gap-2 py-2 px-6 rounded-full border border-red-500/30 text-red-500 text-[10px] font-black tracking-[0.3em] uppercase mb-10 bg-red-500/5 backdrop-blur-xl">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-              Cinema+ Premium Experience
+              Cinema+ Premium 
             </span>
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-white mb-10 leading-[0.95] italic uppercase">
               Định nghĩa lại <br />
@@ -158,41 +157,6 @@ export default function VIPSelection() {
           <h3 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter">Đặc quyền <span className="text-glow">Vô hạn.</span></h3>
         </motion.div>
         <Benefits />
-      </section>
-
-      {/* Final CTA */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <motion.div 
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="p-16 md:p-24 rounded-[4rem] bg-gradient-to-br from-red-600 via-red-900 to-black relative overflow-hidden group"
-        >
-          <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.1)_0%,transparent_70%)] -z-0"></div>
-          <motion.div 
-            animate={{ 
-              scale: [1, 1.2, 1],
-              opacity: [0.1, 0.2, 0.1]
-            }} 
-            transition={{ duration: 10, repeat: Infinity }}
-            className="absolute -right-20 -top-20 w-96 h-96 bg-red-400 rounded-full blur-[120px]"
-          ></motion.div>
-          
-          <div className="relative z-10 text-center max-w-3xl mx-auto space-y-10">
-            <h2 className="text-5xl md:text-7xl font-black text-white italic uppercase tracking-tighter leading-tight">
-              Sẵn sàng cho <br />
-              <span className="text-glow">Kỷ nguyên mới?</span>
-            </h2>
-            <p className="text-white/60 text-lg font-medium italic">
-              Đừng để những quảng cáo phiền nhiễu làm gián đoạn cảm xúc của bạn. Gia nhập cộng đồng Cinema+ VIP ngay hôm nay.
-            </p>
-            <div className="flex justify-center pt-6">
-              <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="px-16 py-7 bg-white text-black font-black uppercase text-xs tracking-widest rounded-3xl hover:bg-black hover:text-white transition-all transform hover:scale-105 active:scale-95 shadow-2xl shadow-black/40">
-                BẮT ĐẦU NGAY BÂY GIỜ
-              </button>
-            </div>
-          </div>
-        </motion.div>
       </section>
     </div>
   );

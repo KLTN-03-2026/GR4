@@ -90,6 +90,14 @@ exports.cancelVip = async (req, res) => {
             [userId]
         );
 
+        // 2. Thêm thông báo
+        const notifTitle = 'Hủy gói VIP';
+        const notifMessage = 'Bạn đã hủy gia hạn gói VIP. Các quyền lợi VIP sẽ bị ngưng và trở về trạng thái cơ bản.';
+        await db.promise().query(
+            'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)',
+            [userId, notifTitle, notifMessage, 'billing']
+        );
+
         res.status(200).json({
             success: true,
             message: 'Hủy gói VIP thành công!'

@@ -154,49 +154,6 @@ const ProfileOverview = ({ user, setIsEditing }) => {
             )}
           </motion.div>
 
-          {/* Recently Viewed */}
-          <div className="glass-dark rounded-[3rem] p-10 border border-white/5 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[50px] -z-10"></div>
-
-            <h4 className="text-xs font-black text-white mb-10 flex items-center gap-3 uppercase tracking-[0.3em]">
-              <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center">
-                <HistoryIcon className="w-4 h-4 text-primary" />
-              </div>
-              Xem gần đây
-            </h4>
-
-            <div className="space-y-6">
-              {[
-                { title: 'Interstellar', progress: 85, img: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&q=80&w=400' },
-                { title: 'The Dark Knight', progress: 100, img: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?auto=format&fit=crop&q=80&w=400' },
-              ].map((movie, i) => (
-                <div key={i} className="flex gap-4 group cursor-pointer relative">
-                  <img
-                    src={movie.img}
-                    className="w-16 h-20 rounded-2xl object-cover shadow-xl grayscale-[50%] group-hover:grayscale-0 transition-all duration-500 border border-white/5"
-                    alt={movie.title}
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="flex flex-col justify-center flex-1">
-                    <h5 className="font-black text-xs text-white group-hover:text-primary transition-colors uppercase tracking-widest mb-1">{movie.title}</h5>
-                    <p className="text-[10px] font-black text-on-surface-variant/40 uppercase tracking-widest leading-none mb-3">Đã xem {movie.progress}%</p>
-                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${movie.progress}%` }}
-                        transition={{ duration: 1, delay: 0.5 + (i * 0.2) }}
-                        className="h-full bg-gradient-to-r from-primary to-primary-container"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Link to="/profile/history" className="block w-full mt-10 py-4 border border-white/10 hover:bg-white/5 text-center text-[10px] font-black text-on-surface-variant/60 rounded-2xl transition-all uppercase tracking-[0.3em] hover:text-white">
-              Lịch sử chi tiết
-            </Link>
-          </div>
         </div>
       </div>
     </div>

@@ -623,7 +623,9 @@ exports.filterMovies = async (req, res) => {
       m.release_date,
       c.name AS country,
       GROUP_CONCAT(DISTINCT g.name) AS genres,
-      m.required_vip_level
+      m.required_vip_level,
+      (SELECT IFNULL(ROUND(AVG(rating), 1), 0) FROM ratings WHERE movie_id = m.id) AS average_rating,
+      (SELECT COUNT(*) FROM movie_views WHERE movie_id = m.id) AS views
     ${baseSql}
     GROUP BY m.id
   `;
@@ -642,9 +644,9 @@ exports.filterMovies = async (req, res) => {
     } else if (sort === "old") {
       pageSql += " ORDER BY m.release_date ASC";
     } else if (sort === "rating") {
-      pageSql += " ORDER BY m.rating DESC";
+      pageSql += " ORDER BY average_rating DESC";
     } else if (sort === "views") {
-      pageSql += " ORDER BY m.views DESC";
+      pageSql += " ORDER BY views DESC";
     }
 
     pageSql += " LIMIT ? OFFSET ?";

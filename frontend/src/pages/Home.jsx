@@ -57,7 +57,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-surface overflow-x-hidden">
       {/* Immersive Background Section */}
-      <section className="relative h-[95vh] w-full flex items-center">
+      <section className="relative h-[95vh] w-full flex items-center overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeBackground}
@@ -150,8 +150,7 @@ const Home = () => {
           </div>
         </div>
       </section>
-            <div className="h-15"></div>      
-            {/* <div className="mt-5"></div>        */}
+
       <main className="relative z-20 -mt-24 space-y-32 pb-40">
         <AnimatePresence mode="wait">
           {!showAll ? (
@@ -162,6 +161,8 @@ const Home = () => {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-32"
             >
+              <div className="flex gap-1">
+              </div>
               {[
                 { title: "Phim Nổi Bật", data: featuredMovies, variant: "default" },
                 { title: "Mới Cập Nhật", data: newUpdates, variant: "horizontal" },
@@ -219,12 +220,6 @@ const Home = () => {
                       <span className="text-[240px] font-black font-manrope leading-[0.7] text-transparent stroke-white/20 -mr-16 z-0 transition-all duration-700 group-hover:text-white/5 group-hover:stroke-primary/40 pointer-events-none italic" style={{ WebkitTextStroke: '2px rgba(255,255,255,0.08)' }}>
                         {index + 1}
                       </span>
-                      {movie.required_vip_level > 0 && (
-                        <div className="absolute top-4 left-10 z-30 px-2 py-1 bg-yellow-500 rounded-lg flex items-center gap-1 shadow-lg pointer-events-none">
-                          <Gem className="w-3 h-3 text-white" />
-                          <span className="text-[8px] font-black text-white uppercase tracking-widest">VIP</span>
-                        </div>
-                      )}
                       <div className="w-56 h-80 rounded-4xl overflow-hidden shadow-[0_32px_64px_rgba(0,0,0,0.6)] border border-white/5 relative z-10 group-hover:-translate-y-6 transition-all duration-700 ease-out group-hover:shadow-primary/20">
                         <img src={movie.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={movie.title} referrerPolicy="no-referrer" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">

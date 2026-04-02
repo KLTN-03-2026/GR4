@@ -12,6 +12,7 @@ import {
 import { cn } from '../../lib/utils.js';
 import { getUnreadCount } from '../../service/notification_service';
 import { useEffect, useState } from 'react';
+import ThemeToggle from '../shared/ThemeToggle';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
@@ -19,7 +20,7 @@ const navItems = [
   { icon: Users, label: 'Quản lý người dùng', path: '/admin/users' },
   { icon: MessageSquare, label: 'Quản lý bình luận', path: '/admin/comments' },
   { icon: BarChart3, label: 'Thống kê', path: '/admin/stats' },
-  { icon: SettingsIcon, label: 'Cài đặt', path: '/admin/settings' },
+  //{ icon: SettingsIcon, label: 'Cài đặt', path: '/admin/settings' },
 ];
 
 export function Sidebar() {
@@ -86,6 +87,7 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-6">
+        <ThemeToggle />
         <Link to="/admin/notifications" className="relative p-2 text-on-surface-variant hover:text-on-surface transition-colors">
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (

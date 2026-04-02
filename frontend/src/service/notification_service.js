@@ -27,6 +27,10 @@ export const markAllAsRead = async () => {
   return axios.put(`${API}/read-all`, {}, getAuthHeaders());
 };
 
+export const deleteReadNotifications = async () => {
+  return axios.delete(`${API}/read`, getAuthHeaders());
+};
+
 export const deleteNotification = async (id) => {
   return axios.delete(`${API}/${id}`, getAuthHeaders());
 };

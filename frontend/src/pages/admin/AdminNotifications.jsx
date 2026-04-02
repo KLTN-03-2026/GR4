@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, Zap, Shield, CreditCard, Gift, MoreVertical, X, Users, Crown } from 'lucide-react';
+import { Bell, Check, Zap, Shield, CreditCard, Gift, MoreVertical, X, Users, Crown, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getNotifications, markAllAsRead, markAsRead, deleteNotification as deleteNotifApi } from '../../service/notification_service';
+import { getNotifications, markAllAsRead, markAsRead, deleteNotification as deleteNotifApi, deleteReadNotifications } from '../../service/notification_service';
 
 const AdminNotifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -30,6 +30,15 @@ const AdminNotifications = () => {
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     } catch (error) {
       console.error('Lỗi khi đánh dấu đã đọc', error);
+    }
+  };
+
+  const handleDeleteRead = async () => {
+    try {
+      await deleteReadNotifications();
+      setNotifications(prev => prev.filter(n => !n.read));
+    } catch (error) {
+      console.error("Lỗi khi xóa", error);
     }
   };
 
@@ -89,7 +98,7 @@ const AdminNotifications = () => {
           <p className="text-xs font-black uppercase tracking-[0.3em] text-on-surface-variant mb-2">Quản trị hệ thống</p>
           <h1 className="text-3xl font-black text-on-surface tracking-tight flex items-center gap-3">
             <Bell className="w-8 h-8 text-primary-container" />
-            Thông báo Admin
+            Hoạt Động Gần Đây
             {unreadCount > 0 && (
               <span className="text-sm bg-primary-container text-white font-black px-3 py-1 rounded-full">
                 {unreadCount} mới
@@ -99,7 +108,7 @@ const AdminNotifications = () => {
           <p className="text-on-surface-variant text-sm mt-1">Theo dõi hoạt động người dùng và hệ thống</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllRead}
@@ -109,6 +118,14 @@ const AdminNotifications = () => {
               Đánh dấu tất cả đã đọc
             </button>
           )}
+          {notifications.length > unreadCount && (
+             <button 
+               onClick={handleDeleteRead}
+               className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 rounded-xl border border-red-500/20 text-xs font-black uppercase tracking-widest text-red-400 hover:text-white hover:bg-red-500/80 transition-all shadow-sm"
+             >
+                <Trash2 className="w-4 h-4" /> {unreadCount === 0 ? "Xóa tất cả" : "Xóa đã đọc"}
+             </button>
+           )}
         </div>
       </div>
 

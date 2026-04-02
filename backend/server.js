@@ -17,6 +17,7 @@ const uploadRouter = require("./src/routes/uploadRouter");
 const vipRouter = require("./src/routes/vipRouter");
 const historyRouter = require("./src/routes/historyRouter");
 const notificationRouter = require("./src/routes/notificationRouter");   
+const statisticsRouter = require("./src/routes/statisticsRouter");
 
 require("dotenv").config();
 
@@ -41,7 +42,8 @@ app.use("/api/ratings", require("./src/routes/ratingRouter"));
 app.use("/api/upload", uploadRouter);
 app.use("/api/vip", vipRouter);
 app.use("/api/history",historyRouter);
-app.use("/api/notification",notificationRouter);
+app.use("/api/notifications", notificationRouter);
+app.use("/api/admin/statistics", statisticsRouter);
 
 app.use((err, req, res, next) => {
   console.error("Global error handler:", err);

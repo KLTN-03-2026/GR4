@@ -6,10 +6,7 @@ export default function ComparisonTable() {
     { name: 'Kho phim miễn phí', free: true, vip: true },
     { name: 'Quảng cáo khi xem', free: 'Có quảng cáo', vip: 'Không quảng cáo', highlight: true },
     { name: 'Độ phân giải tối đa', free: '720p HD', vip: '4K Ultra HD + HDR', highlight: true },
-    { name: 'Phim độc quyền Cinema+', free: false, vip: true },
-    { name: 'Số thiết bị xem cùng lúc', free: '1 thiết bị', vip: 'Tối đa 4 thiết bị', highlight: true },
-    { name: 'Tải phim xem Offline', free: false, vip: true },
-    { name: 'Âm thanh vòm Dolby Atmos', free: false, vip: true },
+    { name: 'Phim độc quyền Cinema+', free: false, vip: true }
   ];
 
   return (

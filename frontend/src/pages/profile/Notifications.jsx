@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Check, Trash2, Zap, Shield, CreditCard, Gift, MoreVertical, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getNotifications, markAllAsRead, markAsRead, deleteNotification as deleteNotifApi } from '../../service/notification_service';
+import { getNotifications, markAllAsRead, markAsRead, deleteNotification as deleteNotifApi, deleteReadNotifications } from '../../service/notification_service';
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -30,6 +30,15 @@ const Notifications = () => {
       setNotifications(notifications.map(n => ({ ...n, read: true })));
     } catch (error) {
       console.error("Lỗi khi đánh dấu đã đọc tất cả", error);
+    }
+  };
+
+  const handleDeleteRead = async () => {
+    try {
+      await deleteReadNotifications();
+      setNotifications(notifications.filter(n => !n.read));
+    } catch (error) {
+      console.error("Lỗi khi xóa", error);
     }
   };
 
@@ -79,6 +88,8 @@ const Notifications = () => {
     }
   };
 
+  const unreadCount = notifications.filter(n => !n.read).length;
+
   return (
     <div className="space-y-12 pb-20">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -90,13 +101,21 @@ const Notifications = () => {
           <h2 className="text-5xl font-black text-white italic tracking-tighter uppercase">Trung tâm <span className="text-glow text-primary">Thông báo.</span></h2>
         </motion.div>
         
-        <div className="flex items-center gap-4">
-           {notifications.some(n => !n.read) && (
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+           {unreadCount > 0 && (
              <button 
                onClick={handleMarkAllRead}
                className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2"
              >
                 <Check className="w-4 h-4" /> Đánh dấu đã đọc
+             </button>
+           )}
+           {notifications.length > unreadCount && (
+             <button 
+               onClick={handleDeleteRead}
+               className="px-6 py-3 bg-primary/10 border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-primary hover:text-white hover:bg-primary/80 transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(229,9,20,0.1)]"
+             >
+                <Trash2 className="w-4 h-4" /> {unreadCount === 0 ? "Xóa tất cả" : "Xóa đã đọc"}
              </button>
            )}
         </div>

@@ -8,6 +8,7 @@ router.get("/", verifyToken, notificationController.getUserNotifications);
 router.get("/unread-count", verifyToken, notificationController.getUnreadCount);
 router.put("/read-all", verifyToken, notificationController.markAllAsRead);
 router.put("/:id/read", verifyToken, notificationController.markAsRead);
+router.delete("/read", verifyToken, notificationController.deleteAllRead);
 router.delete("/:id", verifyToken, notificationController.deleteNotification);
 
 // Admin route to create notification

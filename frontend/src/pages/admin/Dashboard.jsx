@@ -18,15 +18,29 @@ import { cn } from '../../lib/utils';
 import { useMovies } from '../../hooks/useMovies';
 import { useUsers } from '../../hooks/useUsers';
 import { useComments } from '../../hooks/useComments';
-import { dashboardData } from '../../lib/mockData';
 import { PageHeader } from '../../components/shared/PageHeader';
-
-const { recentActivity, announcements } = dashboardData;
+import { getNotifications } from '../../service/notification_service';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const { movies, pagination: moviePagination } = useMovies();
   const { users, pagination: userPagination } = useUsers();
   const { comments } = useComments();
+  const [recentNotifications, setRecentNotifications] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchNotifs = async () => {
+      try {
+        const res = await getNotifications();
+        setRecentNotifications(res.data.slice(0, 5));
+      } catch (error) {
+        console.error('Lỗi khi tải thông báo', error);
+      }
+    };
+    fetchNotifs();
+  }, []);
 
   const totalMovies = moviePagination?.total || 0;
   const totalUsers = userPagination?.total || 0;
@@ -48,10 +62,7 @@ export default function Dashboard() {
         description="Chào mừng trở lại, Admin. Đây là những gì đang diễn ra hôm nay."
         badge="Live Dashboard"
       >
-        <div className="flex gap-2 bg-surface-container p-1 rounded-xl border border-outline-variant/10 shadow-lg">
-          <button className="px-4 py-1.5 text-xs font-bold bg-primary-container text-white rounded-lg shadow-lg">Hôm nay</button>
-          <button className="px-4 py-1.5 text-xs font-bold text-on-surface-variant hover:text-on-surface transition-colors">Tuần này</button>
-        </div>
+        
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -89,98 +100,36 @@ export default function Dashboard() {
             </div>
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-xl font-black font-headline uppercase italic tracking-tight">Hoạt động gần đây</h3>
-              <button className="text-xs font-bold text-primary-container hover:underline uppercase tracking-widest">Xem tất cả</button>
+              <button onClick={() => navigate('/admin/notifications')} className="text-xs font-bold text-primary-container hover:underline uppercase tracking-widest">Xem tất cả</button>
             </div>
             <div className="space-y-6">
-              {recentActivity.map((item, i) => (
-                <div key={i} className="flex items-center gap-4 group cursor-pointer">
-                  <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-outline-variant/10 group-hover:border-primary-container/50 transition-colors">
-                    <img alt={item.user} className="w-full h-full object-cover" src={item.avatar} referrerPolicy="no-referrer" />
+              {recentNotifications.length > 0 ? recentNotifications.map((notif, i) => (
+                <div key={notif.id || i} className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate('/admin/notifications')}>
+                  <div className="w-12 h-12 flex items-center justify-center rounded-2xl border-2 border-outline-variant/10 bg-surface-container-highest group-hover:border-primary-container/50 group-hover:bg-primary-container/10 transition-colors">
+                    <Activity className="w-5 h-5 text-on-surface-variant group-hover:text-primary-container" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-on-surface group-hover:text-primary-container transition-colors">
-                      {item.user} <span className="font-medium text-on-surface-variant">{item.action}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-on-surface group-hover:text-primary-container transition-colors truncate">
+                      {notif.title}
+                    </p>
+                    <p className="text-xs font-medium text-on-surface-variant truncate">
+                      {notif.message}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <Clock className="w-3 h-3 text-on-surface-variant" />
-                      <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">{item.time}</span>
+                      <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest">
+                        {new Date(notif.created_at).toLocaleDateString('vi-VN')} {new Date(notif.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
                   </div>
-                  <button className="p-2 rounded-xl bg-surface-container-highest opacity-0 group-hover:opacity-100 transition-all">
-                    <ArrowUpRight className="w-4 h-4" />
+                  <button className="p-2 rounded-xl bg-surface-container-highest opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                    <ArrowUpRight className="w-4 h-4 text-on-surface" />
                   </button>
                 </div>
-              ))}
+              )) : (
+                <div className="text-center py-6 text-on-surface-variant text-sm font-medium">Chưa có hoạt động nào gần đây.</div>
+              )}
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-surface-container-low rounded-[2rem] p-8 border border-outline-variant/10">
-              <h3 className="text-xl font-black font-headline uppercase italic tracking-tight mb-6">Xu hướng</h3>
-              <div className="space-y-4">
-                {trendingMovies.map((movie, i) => (
-                  <div key={i} className="flex items-center gap-4 group">
-                    <div className="w-16 h-20 rounded-xl overflow-hidden bg-surface-container-highest">
-                      <img alt={movie.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" src={movie.image} referrerPolicy="no-referrer" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-sm font-bold text-on-surface line-clamp-1">{movie.title}</h4>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-primary-container">
-                          <Play className="w-3 h-3 fill-primary-container" />
-                          {movie.views}
-                        </span>
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-500">
-                          <Star className="w-3 h-3 fill-yellow-500" />
-                          {movie.rating}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-primary-container rounded-[2rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-primary-container/20">
-              <div className="absolute -right-10 -bottom-10 opacity-20 rotate-12">
-                <ShieldCheck className="w-48 h-48" />
-              </div>
-              <h3 className="text-xl font-black font-headline uppercase italic tracking-tight mb-2">Trạng thái hệ thống</h3>
-              <p className="text-sm font-medium opacity-80 mb-6">Tất cả các dịch vụ đang hoạt động bình thường.</p>
-              <div className="space-y-4 relative z-10">
-                <div className="flex justify-between items-center text-xs font-bold uppercase tracking-widest">
-                  <span>Server Load</span>
-                  <span>24%</span>
-                </div>
-                <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
-                  <div className="bg-white h-full w-[24%] rounded-full"></div>
-                </div>
-                <button className="w-full py-3 bg-white text-primary-container rounded-xl font-black text-xs uppercase tracking-widest mt-4 hover:bg-white/90 transition-colors">
-                  Kiểm tra chi tiết
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-span-12 lg:col-span-4 space-y-8">
-          <div className="bg-surface-container-low rounded-[2rem] p-8 border border-outline-variant/10 h-full">
-            <h3 className="text-xl font-black font-headline uppercase italic tracking-tight mb-8">Thông báo quan trọng</h3>
-            <div className="space-y-8">
-              {announcements.map((note, i) => (
-                <div key={i} className="relative pl-6 border-l-2 border-outline-variant/10">
-                  <div className={cn("absolute -left-[5px] top-0 w-2 h-2 rounded-full", note.color)}></div>
-                  <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1">{note.date}</p>
-                  <h4 className="text-sm font-bold text-on-surface mb-1">{note.title}</h4>
-                  <span className={cn("text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded", note.color + "/10 " + note.color.replace('bg-', 'text-'))}>
-                    {note.type}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <button className="w-full py-4 border border-outline-variant/20 rounded-2xl text-xs font-bold text-on-surface-variant hover:bg-surface-container-highest transition-all mt-12 uppercase tracking-widest">
-              Trung tâm thông báo
-            </button>
           </div>
         </div>
       </div>

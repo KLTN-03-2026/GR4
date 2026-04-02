@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { 
+import {
   Play, Star, ArrowLeft, Heart, MessageSquare, Share2, Clock, Plus, Info, X, Gem
 } from 'lucide-react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -28,6 +28,9 @@ const MovieDetail = () => {
     addComment,
     loading: commentLoading,
     error: commentError,
+    page,
+    setPage,
+    pagination,
   } = useComments(id);
   const { user } = useAuth();
   const {
@@ -103,8 +106,8 @@ const MovieDetail = () => {
   if (!movie) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center p-6">
-        <div className="max-w-xl w-full glass-dark rounded-3xl border border-white/10 p-12 text-center">
-          <h2 className="text-3xl font-black text-white mb-4">Phim không tồn tại</h2>
+        <div className="max-w-xl w-full glass rounded-3xl border border-outline-variant/10 p-12 text-center">
+          <h2 className="text-3xl font-black text-on-surface mb-4">Phim không tồn tại</h2>
           <p className="text-sm text-on-surface-variant mb-8">
             {movieError || 'Xin lỗi, phim bạn tìm kiếm không có trong hệ thống hoặc đã bị xóa.'}
           </p>
@@ -122,188 +125,181 @@ const MovieDetail = () => {
   return (
     <div className="min-h-screen bg-surface overflow-x-hidden">
       {/* Hero Section with Parallax Background */}
-      <div className="relative h-[80vh] w-full flex items-end">
-        <div className="absolute inset-0 z-0">
-          <img 
-            src={movie.background || movie.image} 
+      <div className="relative min-h-[90vh] w-full flex items-end pt-32 md:pt-40">
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <img
+            src={movie.background || movie.image}
             alt={movie.title}
             onError={(e) => {
               e.target.src = 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=2000';
             }}
-            className="w-full h-full object-cover scale-110 brightness-[0.4] blur-sm"
+            className="w-full h-full object-cover scale-110 brightness-[0.5] blur-[2px]"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-surface via-transparent to-surface/20"></div>
+          <div className="absolute inset-0 bg-linear-to-t from-surface via-surface/40 to-transparent"></div>
+          <div className="absolute inset-x-0 top-0 h-40 bg-linear-to-b from-black/60 to-transparent"></div>
+          <div className="absolute inset-0 bg-linear-to-r from-surface via-transparent to-surface/30"></div>
         </div>
 
         {/* Back Button */}
-        <button 
+        <button
           onClick={() => navigate(-1)}
-          className="fixed top-28 left-8 z-40 p-4 rounded-2xl glass hover:bg-white/10 transition-all group shadow-2xl"
+          className="fixed top-28 left-8 z-40 p-3 md:p-4 rounded-2xl glass hover:bg-primary hover:text-white transition-all group shadow-2xl"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         </button>
 
-        <div className="relative z-10 max-w-[1920px] mx-auto w-full px-8 md:px-16 pb-12 flex flex-col md:flex-row gap-12 items-end">
+        <div className="relative z-10 max-w-[1920px] mx-auto w-full px-6 md:px-16 pb-16 flex flex-col md:flex-row gap-8 md:gap-16 items-center md:items-end">
           {/* Main Poster */}
-          <motion.div 
-            initial={{ opacity: 0, y: 40, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="hidden md:block w-72 lg:w-96 aspect-[2/3] rounded-3xl overflow-hidden shadow-[0_32px_64px_rgba(0,0,0,0.6)] border border-white/5 relative group"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 40 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="w-48 md:w-72 lg:w-96 aspect-[2/3] rounded-3xl overflow-hidden shadow-[0_32px_80px_rgba(229,9,20,0.25)] border border-white/10 relative group shrink-0"
           >
-            <img 
-              src={movie.image} 
+            <img
+              src={movie.image}
               alt={movie.title}
               onError={(e) => {
                 e.target.src = 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=400';
               }}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
             />
-            <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-3xl"></div>
+            <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-3xl group-hover:ring-primary/40 transition-all"></div>
           </motion.div>
 
           {/* Movie Info */}
-          <div className="flex-1 space-y-8 pb-4">
+          <div className="flex-1 space-y-8 text-center md:text-left">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="space-y-4"
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="space-y-6"
             >
-              {/* <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-primary/20">
-                  {movie.quality || '4K ULTRA HD'}
-                </span>
-                <div className="flex items-center gap-1.5 glass px-3 py-1 rounded-lg">
-                  <Star className="w-3.5 h-3.5 text-primary fill-primary" />
-                  <span className="text-sm font-black text-white tracking-tighter">{movie.rating ?? '0.0'}</span>
-                </div>
-              </div> */}
-
               {movie.required_vip_level > 0 && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.15)]"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl text-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)]"
                 >
-                  <Gem className="w-4 h-4" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">Nội dung đặc quyền VIP</span>
+                  <Gem className="w-4 h-4 animate-pulse" />
+                  <span className="text-[11px] font-black uppercase tracking-[0.2em]">Nội Dung Đặc quyền VIP</span>
                 </motion.div>
               )}
 
-              <h1 className="text-5xl lg:text-7xl font-black font-manrope tracking-tighter text-white uppercase leading-[0.9] text-glow">
+              <h1 className="text-4xl md:text-6xl lg:text-8xl font-black font-manrope tracking-tighter text-on-surface uppercase leading-[0.85] text-glow drop-shadow-2xl">
                 {movie.title}
               </h1>
-              <div className="flex flex-wrap items-center gap-6 text-sm font-bold text-on-surface-variant uppercase tracking-widest">
-                <span>{movie.year}</span>
-                <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-                <span>{movie.genre || 'Hành động, Viễn tưởng'}</span>
-                <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
+
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-8 text-xs md:text-sm font-black text-on-surface-variant/90 uppercase tracking-[0.2em]">
+                <div className="flex items-center gap-2 bg-surface-container/50 px-3 py-1.5 rounded-xl border border-outline-variant/10">
+                  <span>{movie.year}</span>
+                </div>
+                <div className="flex items-center gap-2 bg-surface-container/50 px-3 py-1.5 rounded-xl border border-outline-variant/10">
+                  <span>{movie.genre || 'Hành động'}</span>
+                </div>
+                <div className="flex items-center gap-2 bg-surface-container px-3 py-1.5 rounded-xl border border-outline-variant/20 text-on-surface">
+                  <Clock className="w-4 h-4 text-primary" />
                   <span>2h 15m</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 text-primary fill-primary" />
+                <div className="flex items-center gap-2 bg-primary px-3 py-1.5 rounded-xl shadow-lg shadow-primary/20 text-white">
+                  <Star className="w-4 h-4 fill-white" />
                   <span>{(averageRating ?? movie.average_rating ?? movie.rating ?? 0).toFixed(1)}</span>
                 </div>
               </div>
             </motion.div>
 
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="flex flex-wrap gap-4"
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="flex flex-wrap items-center justify-center md:justify-start gap-5 pt-4"
             >
-              <Link to={`/watch/${movie.id}`} className="btn-primary px-10 py-5 text-base uppercase tracking-widest shadow-[0_20px_40px_rgba(229,9,20,0.3)] min-w-[200px]">
-                <Play className="w-6 h-6 fill-white" />
-                Xem ngay
+              <Link to={`/watch/${movie.id}`} className="btn-primary group px-12 py-5 text-base uppercase tracking-widest shadow-[0_20px_50px_rgba(229,9,20,0.45)] hover:shadow-primary/60 min-w-[220px]">
+                <Play className="w-6 h-6 fill-white group-hover:scale-110 transition-transform" />
+                <span className="relative">Xem ngay</span>
               </Link>
-              <button 
+              <button
                 onClick={() => setShowTrailerModal(true)}
-                className="btn-secondary px-10 py-5 text-base uppercase tracking-widest"
+                className="btn-primary group px-12 py-5 text-base uppercase tracking-widest shadow-[0_20px_50px_rgba(255,255,255,0.05)] bg-surface-container border border-outline-variant/20 min-w-[200px] hover:bg-surface-container-high"
               >
-                <Play className="w-6 h-6" />
-                Xem trailer
+                <Play className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                <span className="relative text-on-surface">Xem trailer</span>
               </button>
               <button
                 disabled={favoriteLoading}
                 onClick={handleToggleFavorite}
-                className={`btn-secondary px-8 py-5 flex items-center gap-3 ${isFavorite ? 'bg-red-600 text-white border-red-600' : ''}`}
+                className={`btn-secondary px-8 py-5 text-base uppercase tracking-widest flex items-center gap-3 rounded-2xl transition-all shadow-xl ${isFavorite ? 'bg-primary text-white border-primary shadow-primary/20' : 'bg-surface-container border-outline-variant/10 hover:border-primary/40'}`}
               >
-                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-white' : ''}`} />
-                {favoriteLoading ? 'Đang xử lý...' : isFavorite ? 'Đã yêu thích' : 'Yêu thích'}
+                <Heart className={`w-6 h-6 ${isFavorite ? 'fill-white animate-bounce' : 'group-hover:text-primary'}`} />
+                <span className="relative text-on-surface">{favoriteLoading ? 'Đang xử lý...' : isFavorite ? 'Đã yêu thích' : 'Yêu thích'}</span>
               </button>
             </motion.div>
           </div>
         </div>
       </div>
 
-      <main className="max-w-[1920px] mx-auto px-8 md:px-16 py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-20">
+      <main className="max-w-[1920px] mx-auto px-6 md:px-16 py-24">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-16 lg:gap-24">
           {/* Left Column: Details & Comments */}
-          <div className="lg:col-span-2 space-y-20">
+          <div className="lg:col-span-3 space-y-24">
             {/* Synopsis */}
-            <section className="space-y-6">
-              <h3 className="text-2xl font-black uppercase tracking-tight text-white flex items-center gap-4">
-                Nội dung phim
-                <div className="h-px flex-grow bg-white/5"></div>
-              </h3>
-              <p className="text-lg text-on-surface-variant leading-relaxed font-medium">
+            <section className="space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="w-1 h-8 bg-primary rounded-full"></div>
+                <h3 className="text-3xl font-black uppercase tracking-tight text-on-surface italic">Nội dung phim</h3>
+              </div>
+              <p className="text-xl text-on-surface-variant leading-relaxed font-medium max-w-5xl">
                 {movie.description || "Một hành trình xuyên không gian đầy kịch tính quy tụ dàn diễn viên tinh hoa nhất. Khám phá những bí ẩn chưa từng được tiết lộ trong vũ trụ điện ảnh kỳ vĩ này, nơi mọi ranh giới của sự tưởng tượng bị xóa nhòa."}
               </p>
             </section>
 
             {/* Comments Section */}
-            <section className="space-y-10">
-              <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-black uppercase tracking-tight text-white flex items-center gap-4 flex-grow">
-                  Bình luận
-                  <span className="text-primary font-manrope">{comments.length}</span>
-                  <div className="h-px flex-grow bg-white/5"></div>
-                </h3>
+            <section className="space-y-12">
+              <div className="flex items-center justify-between border-b border-white/5 pb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-1 h-8 bg-primary rounded-full"></div>
+                  <h3 className="text-3xl font-black uppercase tracking-tight text-on-surface italic">
+                    Bình luận <span className="ml-2 text-primary font-manrope not-italic">{pagination?.total || 0}</span>
+                  </h3>
+                </div>
               </div>
 
               {user ? (
-                <CommentForm
-                  value={newComment}
-                  setValue={setNewComment}
-                  onSubmit={addComment}
-                  loading={commentLoading}
-                />
+                <div className=" p-6 md:p-8 rounded-4xl ">
+                  <CommentForm
+                    user={user}
+                    value={newComment}
+                    setValue={setNewComment}
+                    onSubmit={addComment}
+                    loading={commentLoading}
+                  />
+                </div>
               ) : (
-                <Link to="/login" className="flex items-center gap-4 p-6 glass-dark rounded-3xl border border-white/5 hover:border-primary/30 transition-all group">
-                  <div className="w-14 h-14 rounded-2xl bg-surface-container-high flex items-center justify-center border border-white/5">
-                    <MessageSquare className="w-6 h-6 text-on-surface-variant group-hover:text-primary transition-colors" />
+                <Link to="/login" className="flex items-center gap-6 p-8 glass rounded-4xl border border-outline-variant/10 hover:border-primary/30 transition-all group">
+                  <div className="w-16 h-16 rounded-2xl bg-surface-container-high flex items-center justify-center border border-outline-variant/10 group-hover:bg-primary/20 transition-all">
+                    <MessageSquare className="w-7 h-7 text-on-surface-variant group-hover:text-primary transition-colors" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-white uppercase tracking-wide">Đăng nhập để bình luận</p>
-                    <p className="text-[10px] text-on-surface-variant/60 font-medium mt-1">Chia sẻ cảm nhận của bạn về bộ phim này</p>
+                    <p className="text-lg font-black text-on-surface uppercase tracking-wider">Đăng nhập để bình luận</p>
+                    <p className="text-sm text-on-surface-variant/60 font-medium mt-1">Chia sẻ cảm nhận của bạn về bộ phim này</p>
                   </div>
                 </Link>
               )}
 
               {commentError && (
-                <div className="p-4 rounded-3xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm">
+                <div className="p-6 rounded-3xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm flex items-center gap-3">
+                  <Info className="w-5 h-5" />
                   {commentError}
                 </div>
               )}
 
-              {ratingError && (
-                <div className="p-4 rounded-3xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm">
-                  {ratingError}
-                </div>
-              )}
-
-              <div className="glass p-6 rounded-3xl border border-white/10 mb-10">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.3em] text-primary font-black mb-2">Đánh giá của bạn</p>
-                    <p className="text-xs text-on-surface-variant">Chọn số sao để đánh giá phim này</p>
+              <div className="">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+                  <div className="space-y-2">
+                    <p className="text-sm uppercase tracking-[0.4em] text-primary font-black">Cảm nhận của bạn</p>
+                    <p className="text-on-surface-variant font-medium">Đánh giá để giúp cộng đồng tìm được phim hay</p>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-6  px-6 py-4 rounded-2xl ">
                     <StarRating value={userRating || 0} editable onChange={async (value) => {
                       if (!user) {
                         navigate('/login');
@@ -311,8 +307,9 @@ const MovieDetail = () => {
                       }
                       await updateRating(value);
                     }} />
-                    <span className="text-sm font-black text-white">
-                      {userRating ? `Bạn đã đánh giá ${userRating} sao` : 'Chưa đánh giá'}
+                    <div className="h-4 w-px "></div>
+                    <span className="text-sm font-black text-on-surface  tracking-widest min-w-[120px]">
+                      <p>{userRating ? `Bạn đã đánh giá ${userRating} Sao` : 'Chưa đánh giá'}</p>
                     </span>
                   </div>
                 </div>
@@ -322,36 +319,25 @@ const MovieDetail = () => {
                 comments={comments}
                 averageRating={averageRating ?? movie.average_rating ?? movie.rating ?? 0}
                 ratingCount={ratingCount}
+                page={page}
+                setPage={setPage}
+                pagination={pagination}
               />
             </section>
           </div>
 
           {/* Right Column: Sidebar Recommendations */}
-          <div className="space-y-12">
-            <h3 className="text-2xl font-black uppercase tracking-tight text-white flex items-center gap-4">
-              Đề xuất
-              <div className="h-px flex-grow bg-white/5"></div>
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-10">
-              {recommendations?.map((rec) => (
-                <MovieCard key={rec.id} movie={rec} variant="vertical" />
-              ))}
-            </div>
-            
-            {/* Watch with AI/Friends Invite Card */}
-            <div className="glass p-8 rounded-3xl border border-primary/20 bg-primary/5 space-y-6">
-              <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center border border-primary/30">
-                <Plus className="w-6 h-6 text-primary" />
+          <div className="space-y-16">
+            <div className="space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="w-1 h-6 bg-primary rounded-full"></div>
+                <h3 className="text-xl font-black uppercase tracking-tight text-on-surface italic">Đề xuất phim</h3>
               </div>
-              <div>
-                <h4 className="text-lg font-black text-white uppercase tracking-tight mb-2">Xem chung với bạn bè</h4>
-                <p className="text-xs font-medium text-on-surface-variant leading-relaxed italic">
-                  Tạo phòng xem chung và cùng thưởng thức siêu phẩm này với bạn bè của bạn ngay bây giờ.
-                </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-x-4 gap-y-8 justify-items-center">
+                {recommendations?.map((rec) => (
+                  <MovieCard key={rec.id} movie={rec} variant="compact" />
+                ))}
               </div>
-              <button className="w-full py-4 bg-white text-surface rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all">
-                Tạo phòng ngay
-              </button>
             </div>
           </div>
         </div>

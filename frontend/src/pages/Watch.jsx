@@ -33,6 +33,9 @@ const Watch = () => {
     addComment,
     loading: commentLoading,
     error: commentError,
+    page,
+    setPage,
+    pagination,
   } = useComments(id);
   const {
     userRating,
@@ -118,7 +121,7 @@ const Watch = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/80 to-transparent"></div>
                   <div className="absolute inset-0 flex flex-col items-center justify-center z-20 gap-8 p-8 text-center max-w-2xl mx-auto">
-                    <motion.div 
+                    <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       className="w-24 h-24 rounded-[2rem] bg-gradient-to-tr from-yellow-600 to-yellow-400 shadow-[0_0_60px_rgba(202,138,4,0.3)] flex items-center justify-center mb-2 rotate-12"
@@ -144,9 +147,9 @@ const Watch = () => {
                   </div>
                 </div>
               ) : movie.movie_url ? (
-                <PlyrPlayer 
-                  url={obfuscate(movie.movie_url)} 
-                  poster={movie.image} 
+                <PlyrPlayer
+                  url={obfuscate(movie.movie_url)}
+                  poster={movie.image}
                   title={movie.title}
                   movieId={movie.id}
                   onPlayStateChange={setIsPlaying}
@@ -182,29 +185,7 @@ const Watch = () => {
                 </p>
               </div>
 
-              <div className="flex gap-4 shrink-0">
-                <button 
-                  onClick={() => {
-                    const shareData = {
-                      title: movie.title,
-                      text: movie.description,
-                      url: window.location.href,
-                    };
-                    if (navigator.share) {
-                      navigator.share(shareData);
-                    } else {
-                      navigator.clipboard.writeText(window.location.href);
-                      alert('Đã sao chép liên kết phim!');
-                    }
-                  }}
-                  className="w-14 h-14 rounded-2xl glass-dark border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all group"
-                >
-                  <Share2 className="w-6 h-6 group-hover:text-primary transition-all scale-95 group-active:scale-125" />
-                </button>
-                <button className="w-14 h-14 rounded-2xl glass-dark border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all group">
-                  <Heart className="w-6 h-6 group-hover:fill-primary group-hover:text-primary transition-all scale-95 group-active:scale-125" />
-                </button>
-              </div>
+
             </div>
 
             {/* Advanced Section: Comments */}
@@ -216,7 +197,7 @@ const Watch = () => {
                     <h3 className="text-3xl font-black uppercase tracking-tight text-white flex items-center gap-4">
                       <MessageSquare className="w-7 h-7 text-primary" />
                       Bình luận & Đánh giá
-                      <span className="text-primary font-manrope text-2xl">{comments.length}</span>
+                      <span className="text-primary font-manrope text-2xl">{pagination?.total || 0}</span>
                     </h3>
                   </div>
                 </div>
@@ -224,6 +205,7 @@ const Watch = () => {
 
               {user ? (
                 <CommentForm
+                  user={user}
                   value={newComment}
                   setValue={setNewComment}
                   onSubmit={addComment}
@@ -278,6 +260,9 @@ const Watch = () => {
                 comments={comments}
                 averageRating={averageRating ?? movie.average_rating ?? movie.rating ?? 0}
                 ratingCount={ratingCount}
+                page={page}
+                setPage={setPage}
+                pagination={pagination}
               />
 
 
@@ -308,9 +293,11 @@ const Watch = () => {
                   <div className="flex flex-col justify-center flex-1 py-1 min-w-0">
                     <h4 className="font-black text-xs text-white group-hover:text-primary transition-colors line-clamp-2 tracking-wide uppercase leading-[1.4]">{rec.title}</h4>
                     <div className="flex items-center gap-4 mt-3">
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 rounded-lg">
-                        <Star className="w-2.5 h-2.5 text-primary fill-primary" />
-                        <span className="text-[9px] font-black text-white/80">{rec.rating ?? '0'}</span>
+                      <div className="flex items-center gap-1  px-2.5 py-1 rounded-lg text-white text-xs font-bold">
+                        <Star className="w-3.5 h-3 fill-primary text-primary" />
+                        <span>
+                          {Number(rec.average_rating ?? rec.rating ?? 0).toFixed(1)}
+                        </span>
                       </div>
                       <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">{rec.year}</span>
                     </div>

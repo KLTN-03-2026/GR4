@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState } from "react";
-import { Eye, EyeOff, ShieldCheck, Smartphone, Globe, Lock, ShieldAlert, Key, LogOut, ChevronRight, Check } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Eye, EyeOff, ShieldCheck, Smartphone, Globe, Lock, ShieldAlert, Key, LogOut, ChevronRight, Check, CheckCircle2, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from "../../hooks/useAuth";  
 
 const Security = ({ showPassword, setShowPassword }) => {
@@ -15,21 +15,26 @@ const Security = ({ showPassword, setShowPassword }) => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
   // 🔥 HANDLE SUBMIT
   const handleChangePassword = async () => {
+    setSuccessMsg("");
+    setErrorMsg("");
+
     if (!form.oldPass || !form.newPass || !form.confirmPass) {
-      alert("Vui lòng nhập đầy đủ thông tin");
+      setErrorMsg("Vui lòng nhập đầy đủ tất cả thông tin.");
       return;
     }
 
     if (form.newPass.length < 6) {
-      alert("Mật khẩu phải >= 6 ký tự");
+      setErrorMsg("Mật khẩu mới phải có ít nhất 6 ký tự.");
       return;
     }
 
     if (form.newPass !== form.confirmPass) {
-      alert("Xác nhận mật khẩu không khớp");
+      setErrorMsg("Xác nhận mật khẩu không khớp.");
       return;
     }
 
@@ -38,7 +43,7 @@ const Security = ({ showPassword, setShowPassword }) => {
 
       await changePassword(form);
 
-      alert("Đổi mật khẩu thành công 🔥");
+      setSuccessMsg("Cập nhật mật khẩu thành công! Bạn có thể sử dụng mật khẩu mới ngay.");
 
       setForm({
         oldPass: "",
@@ -47,7 +52,7 @@ const Security = ({ showPassword, setShowPassword }) => {
       });
 
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi đổi mật khẩu");
+      setErrorMsg(err.response?.data?.message || "Có lỗi xảy ra khi đổi mật khẩu.");
     } finally {
       setLoading(false);
     }
@@ -135,6 +140,32 @@ const Security = ({ showPassword, setShowPassword }) => {
               />
             </div>
           </div>
+
+          <AnimatePresence>
+            {errorMsg && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="p-5 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-center gap-4 shadow-[0_10px_30px_rgba(239,68,68,0.1)]"
+              >
+                <AlertCircle className="w-6 h-6 text-red-500 shrink-0" />
+                <p className="text-red-400 text-sm font-bold tracking-wide">{errorMsg}</p>
+              </motion.div>
+            )}
+
+            {successMsg && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="p-5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center gap-4 shadow-[0_10px_30px_rgba(16,185,129,0.1)]"
+              >
+                <CheckCircle2 className="w-6 h-6 text-emerald-500 shrink-0" />
+                <p className="text-emerald-400 text-sm font-bold tracking-wide">{successMsg}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* BUTTON */}
           <button
