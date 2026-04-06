@@ -11,9 +11,9 @@ require('dotenv').config();
 // CONFIGURATION FROM ENV
 // ──────────────────────────────────────────────────────────────
 const CLOUD_CONFIG = {
-    apiKey: process.env.OLLAMA_API_KEY,
-    apiUrl: process.env.OLLAMA_API_URL || 'https://api.groq.com/openai/v1/chat/completions',
-    model: process.env.OLLAMA_MODEL || 'llama-3.1-8b-instant',
+    apiKey: process.env.GROQ_API_KEY,
+    apiUrl: process.env.GROQ_API_URL || 'https://api.groq.com/openai/v1/chat/completions',
+    model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
     timeout: parseInt(process.env.AI_TIMEOUT_CLOUD) || 30000,
     maxTokens: parseInt(process.env.AI_MAX_TOKENS) || 1024,
     temperature: parseFloat(process.env.AI_TEMPERATURE) || 0.7
