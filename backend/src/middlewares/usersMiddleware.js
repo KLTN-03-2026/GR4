@@ -13,8 +13,30 @@ exports.verifyToken = (req, res, next) => {
   });
 };
 
+exports.verifyTokenOptional = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    req.user = null;
+    return next();
+  }
+  const token = authHeader.split(" ")[1];
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      req.user = null;
+    } else {
+      req.user = decoded;
+    }
+    next();
+  });
+};
+
 exports.isAdmin = (req, res, next) => {
-  if (req.user.role_id !== 1)
+  if (!req.user || req.user.role_id !== 1)
     return res.status(403).json({ message: "Chỉ Admin mới có quyền" });
   next();
 };
