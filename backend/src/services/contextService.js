@@ -45,11 +45,11 @@ exports.getRelevantContext = async (query, userId = null) => {
         // ──────────────────────────────────────────────────────────────
         if (containsKeywords(lowerQuery, INTENT_KEYWORDS.GREETING) && lowerQuery.length < 20) {
             contextParts.push(`╔══════════════════════════════════════════╗
-║              CHÀO HỎI                   ║
-╚══════════════════════════════════════════╝
-User đang chào hỏi.
-→ Chào lại thân thiện ${userInfo ? `và gọi tên: "${userInfo.name}"` : ''}
-→ Giới thiệu bạn có thể giúp: tìm phim, VIP, kiểm tra tài khoản`);
+                               ║              CHÀO HỎI                    ║
+                               ╚══════════════════════════════════════════╝
+                               User đang chào hỏi.
+                               → Chào lại thân thiện ${userInfo ? `và gọi tên: "${userInfo.name}"` : ''}
+                               → Giới thiệu bạn có thể giúp: tìm phim, VIP, kiểm tra tài khoản`);
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -114,10 +114,10 @@ User đang chào hỏi.
             } else {
                 const keyword = extractSearchKeyword(lowerQuery);
                 contextParts.push(`╔══════════════════════════════════════════╗
-║       KHÔNG TÌM THẤY PHIM               ║
-╚══════════════════════════════════════════╝
-Không tìm thấy phim "${keyword || query}".
-→ Nói: "Xin lỗi, Cinema New hiện chưa có phim '${keyword || 'này'}'. Bạn có thể thử: Hành động, Kinh dị, Tình cảm, Hài... 😊"`);
+                                   ║       KHÔNG TÌM THẤY PHIM                ║
+                                   ╚══════════════════════════════════════════╝
+                                    Không tìm thấy phim "${keyword || query}".
+     → Nói: "Xin lỗi, Cinema New hiện chưa có phim '${keyword || 'này'}'. Bạn có thể thử: Hành động, Kinh dị, Tình cảm, Hài... 😊"`);
             }
         }
 
@@ -126,15 +126,15 @@ Không tìm thấy phim "${keyword || query}".
         // ──────────────────────────────────────────────────────────────
         if (contextParts.length === 0 || (contextParts.length === 1 && userInfo)) {
             contextParts.push(`╔══════════════════════════════════════════╗
-║         TRẢ LỜI CHUNG                   ║
-╚══════════════════════════════════════════╝
-User nói: "${query}"
+                               ║         TRẢ LỜI CHUNG                    ║
+                               ╚══════════════════════════════════════════╝
+                               User nói: "${query}"
 
-→ Nếu không hiểu, nói: "Tôi có thể giúp bạn:
-   • 🎬 Tìm phim (VD: phim hành động)
-   • 🔥 Phim hot / phim mới
-   • 👑 Thông tin VIP
-   Bạn cần gì nhé? 😊"`);
+                               → Nếu không hiểu, nói: "Tôi có thể giúp bạn:
+                                  • 🎬 Tìm phim (VD: phim hành động)
+                                  • 🔥 Phim hot / phim mới
+                                  • 👑 Thông tin VIP
+                                  Bạn cần gì nhé? 😊"`);
         }
 
         return contextParts.join('\n\n');

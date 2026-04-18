@@ -139,11 +139,11 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗
-║                    🎬 CINEMA NEW API                      ║
+║                   🎬 CINEMA NEW API                      ║
 ╠═══════════════════════════════════════════════════════════╣
-║  Server running on port ${PORT}                             ║
-║  Environment: ${process.env.NODE_ENV || 'development'}                        ║
-║  API Base: http://localhost:${PORT}/api                     ║
+║  Server running on port ${PORT}                           ║
+║  Environment: ${process.env.NODE_ENV || 'development'}    ║
+║  API Base: http://localhost:${PORT}/api                   ║
 ╚═══════════════════════════════════════════════════════════╝
 
 📍 Available AI Endpoints:
